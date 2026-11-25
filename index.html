@@ -83,6 +83,10 @@ h1{font-weight:700;font-size:clamp(30px,8vw,40px);line-height:1.1;letter-spacing
 /* ilerleme */
 .prog{display:flex;align-items:center;gap:12px;margin:28px 0 6px;font-size:13px;color:var(--muted);min-height:20px}
 .prog b{color:var(--ink);font-weight:600}
+.lnk{min-height:40px;padding:0 4px;color:var(--muted);font-size:13px;font-weight:500;white-space:nowrap}
+.lnk:hover{color:var(--ink)}
+.hidnote{display:flex;align-items:center;gap:8px;margin:4px 0 0 36px;font-size:13px;color:var(--faint)}
+.hidnote .lnk{text-decoration:underline;text-underline-offset:3px}
 .meter{flex:1;height:3px;background:var(--line);border-radius:3px;overflow:hidden}
 .meter i{display:block;height:100%;background:var(--acc);border-radius:3px;transition:width .35s}
 
@@ -239,10 +243,11 @@ footer button:hover{color:var(--ink)}
       </nav>
     </div>
   </header>
-  <div class="prog" id="prog"><span id="progt"></span><div class="meter"><i id="progb" style="width:0"></i></div></div>
+  <div class="prog" id="prog"><span id="progt"></span><div class="meter"><i id="progb" style="width:0"></i></div><button class="lnk" id="hideBtn" hidden>Yapılanları gizle</button></div>
   <div class="carry" id="carry" hidden></div>
   <section id="dayView">
     <ul class="list" id="list" aria-label="İşler"></ul>
+    <p class="hidnote" id="hidNote" hidden><span></span><button class="lnk" id="showBtn">Göster</button></p>
     <p class="empty" id="empty" hidden></p>
     <form class="add" id="add" autocomplete="off">
       <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
@@ -283,7 +288,7 @@ system:SVG('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12
 const LS='gunluk-defter-v1',LSS='gunluk-defter-ayar-v1';
 let days={},settings={routines:[]};
 const normTask=x=>({id:String(x.id||rid()),text:String(x.text||'').slice(0,200),time:x.time?String(x.time).slice(0,5):'',done:!!x.done,moved:!!x.moved,routine:x.routine?String(x.routine):'',...(x.important?{important:true}:{})});
-const norm=(v,k)=>({d:k,tasks:Array.isArray(v?.tasks)?v.tasks.filter(x=>x&&typeof x==='object').map(normTask):[],carried:!!v?.carried,ra:!!v?.ra,note:String(v?.note||'')});
+const norm=(v,k)=>({d:k,tasks:Array.isArray(v?.tasks)?v.tasks.filter(x=>x&&typeof x==='object').map(normTask):[],carried:!!v?.carried,ra:!!v?.ra,note:String(v?.note||''),...(v?.hideDone?{hideDone:true}:{})});
 const normS=v=>({routines:Array.isArray(v?.routines)?v.routines.filter(r=>r&&r.id).map(r=>({id:String(r.id),text:String(r.text||''),time:r.time?String(r.time):''})):[]});
 try{const c=JSON.parse(localStorage.getItem(LS)||'{}');for(const k of Object.keys(c||{}))if(/^\d{4}-\d\d-\d\d$/.test(k))days[k]=norm(c[k],k)}catch(e){}
 try{settings=normS(JSON.parse(localStorage.getItem(LSS)||'{}'))}catch(e){}
@@ -312,6 +317,10 @@ function applyRoutines(k){if(!ready||k<keyOf(0))return;const d=day(k);if(d.ra)re
 function carrySource(){const today=keyOf(0);if(day(today).carried)return null;
   for(const k of Object.keys(days).filter(k=>k<today).sort().reverse()){if(!days[k].tasks.length)continue;const left=days[k].tasks.filter(t=>!t.done&&!t.moved&&!t.routine);return left.length?{k,left}:null}return null}
 
+/* ---------- günü temizle: yapılanlar silinmez, yalnızca listeden gizlenir ---------- */
+const isHid=(k,t)=>!!day(k).hideDone&&t.done;
+function setHide(on){const k=viewKey(),D=day(k);if(on)D.hideDone=true;else delete D.hideDone;save(k);render();if(on)toast('Yapılan işler gizlendi')}
+
 /* ---------- liste: anahtarlı, yalnızca değişeni günceller ---------- */
 const rows=new Map();
 function rowEl(id){let li=rows.get(id);if(li)return li;li=document.createElement('li');li.className='task';li.dataset.id=id;li.tabIndex=0;
@@ -325,7 +334,7 @@ function paint(li,t,isNext){const sig=[t.text,t.time,t.done,t.routine,t.importan
   li.querySelector('.tag').hidden=!isNext;li.querySelector('.rti').hidden=!t.routine;
   const rt=li.querySelector('.rt');rt.classList.toggle('on',!!t.routine);rt.title=t.routine?'Rutinden çıkar (R)':'Her gün tekrarla (R)';rt.setAttribute('aria-label',rt.title);
   const mv=li.querySelector('.mv');mv.innerHTML=view==='yarin'?IC.back:IC.fwd;mv.title=view==='yarin'?'Bugüne al (T)':'Yarına ertele (T)';mv.setAttribute('aria-label',mv.title)}
-function renderList(k){const ts=day(k).tasks,first=view==='bugun'?ts.find(t=>!t.done):null,ul=$('#list'),keep=new Set();
+function renderList(k){const all=day(k).tasks,ts=all.filter(t=>!isHid(k,t)),first=view==='bugun'?ts.find(t=>!t.done):null,ul=$('#list'),keep=new Set();
   ts.forEach((t,i)=>{const li=rowEl(t.id);keep.add(t.id);paint(li,t,t===first);if(ul.children[i]!==li)ul.insertBefore(li,ul.children[i]||null)});
   for(const [id,li] of rows)if(!keep.has(id)){li.remove();rows.delete(id)}}
 
@@ -339,6 +348,8 @@ function render(){if(editing)return;
   $('#date').textContent=fmtDay(d);$('#wday').textContent=(view==='yarin'?'Yarın, ':'')+fmtW(d);
   $('#progt').innerHTML=view==='yarin'?(ts.length?`<b>${ts.length}</b> iş planlandı`:'Henüz plan yok'):(ts.length?`<b>${done}/${ts.length}</b> tamamlandı`:'Plan boş');
   $('#progb').style.width=(view==='bugun'&&ts.length?done/ts.length*100:0)+'%';
+  $('#hideBtn').hidden=view!=='bugun'||!done||!!D.hideDone;
+  const hidN=ts.filter(t=>isHid(k,t)).length,hn=$('#hidNote');hn.hidden=!hidN;if(hidN)hn.querySelector('span').textContent=hidN+' yapılmış iş gizli';
   renderList(k);
   const em=$('#empty');em.hidden=!!ts.length;em.textContent=view==='yarin'?'Yarını şimdiden planlamak istersen aşağıya yaz.':'Bugün için plan yok. İlk işi yazarak başla.';
   const nt=$('#note');if(document.activeElement!==nt&&nt.value!==D.note)nt.value=D.note;
@@ -392,7 +403,7 @@ function toggleRoutine(id){const f=find(id);if(!f.t)return;
     const other=view==='yarin'?keyOf(0):keyOf(1),o=days[other];if(o&&o.ra&&!o.tasks.some(t=>t.routine===r.id)){o.tasks.unshift({id:rid(),text:r.text,time:r.time,done:false,moved:false,routine:r.id});save(other)}
     toast('Artık her gün eklenecek')}
   save(f.k,'settings');render();renderPanel()}
-function reorder(id,dir){const f=find(id),j=f.i+dir;if(!f.t||j<0||j>=f.ts.length)return;[f.ts[f.i],f.ts[j]]=[f.ts[j],f.ts[f.i]];save(f.k);render();rows.get(id)?.focus()}
+function reorder(id,dir){const f=find(id);let j=f.i+dir;while(f.ts[j]&&isHid(f.k,f.ts[j]))j+=dir;if(!f.t||j<0||j>=f.ts.length)return;[f.ts[f.i],f.ts[j]]=[f.ts[j],f.ts[f.i]];save(f.k);render();rows.get(id)?.focus()}
 function startEdit(id){const f=find(id),li=rows.get(id);if(!f.t||!li)return;editing=id;
   const body=li.querySelector('.body');body.hidden=true;const inp=document.createElement('input');inp.className='edit';inp.maxLength=200;inp.value=(f.t.time?f.t.time+' ':'')+f.t.text;body.after(inp);inp.focus();inp.select();
   let fin=false;const end=ok=>{if(fin)return;fin=true;editing=null;if(ok){const p=parse(inp.value),g=find(id);if(p.text&&g.t&&(g.t.text!==p.text||g.t.time!==p.time)){g.t.text=p.text;g.t.time=p.time;
@@ -453,7 +464,7 @@ $('#list').addEventListener('click',e=>{const li=e.target.closest('.task');if(!l
 $('#list').addEventListener('dblclick',e=>{const b=e.target.closest('.body');if(b)startEdit(b.closest('.task').dataset.id)});
 $('#list').addEventListener('keydown',e=>{const li=e.target.closest('.task');if(!li||e.target!==li||editing)return;const id=li.dataset.id,i=[...li.parentNode.children].indexOf(li),k=e.key;
   if(k==='ArrowDown'||k==='ArrowUp'){e.preventDefault();const dir=k==='ArrowDown'?1:-1;if(e.altKey)reorder(id,dir);else if(dir>0&&i===li.parentNode.children.length-1)$('#inp').focus();else focusRow(i+dir)}
-  else if(k===' '||k==='x'){e.preventDefault();toggle(id);rows.get(id)?.focus()}
+  else if(k===' '||k==='x'){e.preventDefault();toggle(id);(rows.get(id)?.isConnected?rows.get(id).focus():focusRow(i))}
   else if(k==='Enter'||k==='e'){e.preventDefault();startEdit(id)}
   else if(k==='Delete'||k==='Backspace'){e.preventDefault();focusRow(del(id))}
   else if(k==='t'){e.preventDefault();focusRow(moveDay(id))}
@@ -463,14 +474,16 @@ $('#list').addEventListener('pointerdown',e=>{const g=e.target.closest('.grip');
   const mv=ev=>{const y=ev.clientY,p=li.previousElementSibling,n=li.nextElementSibling;
     if(p){const r=p.getBoundingClientRect();if(y<r.top+r.height/2){ul.insertBefore(li,p);return}}if(n){const r=n.getBoundingClientRect();if(y>r.top+r.height/2)ul.insertBefore(n,li)}};
   const up=()=>{g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up);g.removeEventListener('pointercancel',up);li.classList.remove('drag');
-    const k=viewKey(),ts=day(k).tasks,next=[...ul.children].map(x=>ts.find(t=>t.id===x.dataset.id)).filter(Boolean);
-    if(next.length===ts.length&&next.some((t,i)=>t!==ts[i])){day(k).tasks=next;save(k)}render()};
+    const k=viewKey(),ts=day(k).tasks,vis=[...ul.children].map(x=>ts.find(t=>t.id===x.dataset.id)).filter(Boolean);
+    let vi=0;const next=vis.length===ts.filter(t=>!isHid(k,t)).length?ts.map(t=>isHid(k,t)?t:vis[vi++]):ts;
+    if(next.some((t,i)=>t!==ts[i])){day(k).tasks=next;save(k)}render()};
   g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up)});
 $('#carry').addEventListener('click',e=>{const today=keyOf(0),go=e.target.closest('.go');
   if(go){const k=go.dataset.k,left=day(k).tasks.filter(t=>!t.done&&!t.moved&&!t.routine);left.forEach(t=>{t.moved=true;day(today).tasks.push({id:rid(),text:t.text,time:t.time,done:false,moved:false,routine:''})});day(today).carried=true;save(k,today);render();toast(left.length+' iş bugüne taşındı')}
   else if(e.target.closest('.skip')){day(today).carried=true;save(today);render()}});
 $('#note').addEventListener('input',e=>{const k=viewKey();day(k).note=e.target.value;save(k)});
 $('#copyBtn').onclick=copyPlan;
+$('#hideBtn').onclick=()=>setHide(true);$('#showBtn').onclick=()=>setHide(false);
 $('#hq').addEventListener('input',()=>render());
 $('#hq').addEventListener('keydown',e=>{if(e.key==='Escape'&&e.target.value){e.stopPropagation();e.target.value='';render()}});
 const panel=$('#panel');
