@@ -8,31 +8,37 @@
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0b100d" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-<link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="Defter">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="preload" href="fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/inter-latin-ext.woff2" as="font" type="font/woff2" crossorigin>
 <script type="application/json" id="claude-artifacts-manifest">{"permissions":["shortcuts","menu-bar"]}</script>
 <style>
 /* VOICE: sakin, net, iş odaklı — sabah açılıp gün boyu yanında duran bir araç
    IDEA: bir ilaç kutusu etiketi gibi düzenli: tek renk vurgu, net bloklar, gereksiz süs yok
    PICTURE: liste uygulamanın kendisi; sıradaki iş zümrüt şeritle öne çıkıyor
-   COLOUR and TYPE: beyaz zemin, siyah metin, zümrüt vurgu, devreden işler için pembe blok; Schibsted Grotesk
+   COLOUR and TYPE: beyaz zemin, siyah metin, zümrüt vurgu, devreden işler için pembe blok; Inter (yerel, variable)
    LAYOUT: tek sütun, üstte tarih + sekmeler, ilerleme, liste, ekleme satırı, günün notu */
-:root{color-scheme:light dark;
+@font-face{font-family:Inter;font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/inter-latin-ext.woff2) format("woff2");
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:Inter;font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/inter-latin.woff2) format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+:root{color-scheme:light dark;--font:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
 --bg:light-dark(#ffffff,#0b100d);--surf:light-dark(#f5f6f5,#131a16);--line:light-dark(#e7e9e7,#1f2923);
 --ink:light-dark(#111412,#eef2ef);--muted:light-dark(#69716c,#8d9890);--faint:light-dark(#a5aca7,#56615a);
 --acc:light-dark(#00a86b,#2fd08f);--accSoft:light-dark(#e3f6ee,#11291d);--onAcc:light-dark(#ffffff,#04140d);
 --pink:light-dark(#ffd6e0,#3a2128);--pinkInk:light-dark(#6b1d33,#ffc2d1);--red:light-dark(#d93a3f,#ff7a7f)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Schibsted Grotesk",system-ui,sans-serif;overflow-x:clip;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--font);font-feature-settings:"cv11","ss03";overflow-x:clip;-webkit-font-smoothing:antialiased}
+.num,.tm,.hp,.kpi b,#progt,.spark small{font-variant-numeric:tabular-nums}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:14px;font-weight:600;color:var(--muted)}
+.brand svg{width:24px;height:24px;flex:none}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:8px}
-kbd{font:600 12px/1 "Schibsted Grotesk",sans-serif;background:var(--surf);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:3px 6px;color:var(--muted);white-space:nowrap}
+kbd{font:600 12px/1 var(--font);background:var(--surf);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:3px 6px;color:var(--muted);white-space:nowrap}
 .app{max-width:720px;margin:0 auto;padding:clamp(24px,5vw,56px) max(4vw,14px) 40px}
 .top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 24px}
 h1{font-weight:800;font-size:clamp(32px,6vw,44px);line-height:1.05;letter-spacing:-.025em;margin:0}
@@ -69,7 +75,7 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .done .tm{color:var(--faint)}
 .tag{font-size:11px;font-weight:700;color:var(--acc);background:var(--accSoft);border-radius:5px;padding:2px 7px;white-space:nowrap}
 .rti{color:var(--muted);display:inline-flex;align-self:center}.rti svg{width:14px;height:14px}
-.edit{width:100%;font:500 16px "Schibsted Grotesk",sans-serif;color:var(--ink);background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 8px 6px 0}
+.edit{width:100%;font:500 16px var(--font);color:var(--ink);background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 8px 6px 0}
 .acts{position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:2px;padding:0 2px 0 24px;background:linear-gradient(to right,transparent,var(--bg) 20px);opacity:0;pointer-events:none;transition:opacity .12s}
 .task:focus-visible .acts{background:linear-gradient(to right,transparent,var(--surf) 20px)}
 .task:hover .acts,.task:focus-within .acts,.task:focus .acts{opacity:1;pointer-events:auto}
@@ -80,13 +86,13 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .grip{cursor:grab;touch-action:none}.drag .grip{cursor:grabbing}
 .add{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;min-height:52px;border-bottom:1px solid var(--line)}
 .add>svg{justify-self:center;color:var(--faint)}
-.add input{height:50px;border:0;background:transparent;font:500 16px "Schibsted Grotesk",sans-serif;color:var(--ink);padding:0 8px 0 2px;outline:none}
+.add input{height:50px;border:0;background:transparent;font:500 16px var(--font);color:var(--ink);padding:0 8px 0 2px;outline:none}
 .add input::placeholder{color:var(--faint)}
 .add:focus-within>svg{color:var(--acc)}.add kbd{opacity:0;transition:opacity .15s}.add:focus-within kbd{opacity:1}
 .empty{margin:20px 0 4px 44px;color:var(--muted)}
 .notewrap{margin-top:28px}
 .notewrap label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px}
-textarea{width:100%;min-height:76px;resize:vertical;font:400 15px/1.55 "Schibsted Grotesk",sans-serif;color:var(--ink);background:var(--surf);border:1px solid transparent;border-radius:12px;padding:12px 14px;outline:none}
+textarea{width:100%;min-height:76px;resize:vertical;font:400 15px/1.55 var(--font);color:var(--ink);background:var(--surf);border:1px solid transparent;border-radius:12px;padding:12px 14px;outline:none}
 textarea:focus{border-color:var(--acc);background:var(--bg)}
 .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:28px 0 14px}
 .kpi{background:var(--surf);border-radius:12px;padding:14px 16px}
@@ -121,7 +127,7 @@ footer button{color:var(--muted);font-weight:600;text-decoration:underline;text-
 .rlist{list-style:none;margin:0 0 8px;padding:0}
 .rlist li{display:flex;align-items:center;gap:8px;min-height:40px;border-bottom:1px solid var(--line);font-size:15px}
 .rlist li span{flex:1}.rlist button{width:32px;height:32px;display:grid;place-items:center;color:var(--faint);border-radius:8px}.rlist button:hover{color:var(--red);background:var(--surf)}
-.radd{display:flex;gap:8px}.radd input{flex:1;height:40px;border:1px solid var(--line);border-radius:9px;padding:0 10px;font:500 15px "Schibsted Grotesk",sans-serif;background:var(--bg);color:var(--ink)}
+.radd{display:flex;gap:8px}.radd input{flex:1;height:40px;border:1px solid var(--line);border-radius:9px;padding:0 10px;font:500 15px var(--font);background:var(--bg);color:var(--ink)}
 .btn{min-height:40px;padding:0 14px;border-radius:9px;font-weight:700;font-size:14px;background:var(--ink);color:var(--bg)}
 .btn.sec{background:var(--surf);color:var(--ink)}
 .ok{color:var(--acc);font-weight:700;font-size:14px}
@@ -138,7 +144,7 @@ footer button{color:var(--muted);font-weight:600;text-decoration:underline;text-
 <body>
 <div class="app">
   <header class="top">
-    <div><h1 id="date">Bugün</h1><p class="wday" id="wday"></p></div>
+    <div><div class="brand"><svg viewBox="0 0 256 256" aria-hidden="true"><rect width="256" height="256" rx="58" fill="#00a86b"/><path d="M72 134l40 40 76-82" fill="none" stroke="#fff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/></svg>Günlük Defter</div><h1 id="date">Bugün</h1><p class="wday" id="wday"></p></div>
     <div class="tools">
       <nav class="tabs" role="tablist" aria-label="Görünüm">
         <button role="tab" data-v="bugun" aria-selected="true">Bugün</button>
