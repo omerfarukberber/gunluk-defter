@@ -107,6 +107,9 @@ h1{font-weight:700;font-size:clamp(30px,8vw,40px);line-height:1.1;letter-spacing
 .tx{font-size:16px;font-weight:450;transition:color .2s}
 .done .tx{color:var(--faint);text-decoration:line-through;text-decoration-thickness:1px}
 .done .tm{color:var(--faint)}
+.impd{width:8px;height:8px;border-radius:50%;background:var(--imp);align-self:center;flex:none;margin-right:-2px}
+.done .impd{opacity:.4}
+.acts .imp.on{color:var(--imp)}.acts .imp.on svg{fill:currentColor}
 .tag{font-size:12px;font-weight:600;color:var(--acc);white-space:nowrap}
 .rti{color:var(--faint);display:inline-flex;align-self:center}.rti svg{width:14px;height:14px}
 .edit{width:100%;font-size:16px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:4px 8px 4px 4px;outline:none}
@@ -247,13 +250,13 @@ const rid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).sli
 const clone=o=>JSON.parse(JSON.stringify(o));
 const SVG=p=>`<svg class="i" viewBox="0 0 24 24">${p}</svg>`;
 const IC={fwd:SVG('<path d="M5 12h13M13 6l6 6-6 6"/>'),back:SVG('<path d="M19 12H6M11 6l-6 6 6 6"/>'),del:SVG('<path d="M6 6l12 12M18 6L6 18"/>'),
-grip:SVG('<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="3.2"/>'),ed:SVG('<path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/>'),
+grip:SVG('<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="3.2"/>'),ed:SVG('<path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/>'),imp:SVG('<circle cx="12" cy="12" r="5"/>'),
 system:SVG('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>'),light:SVG('<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/>'),dark:SVG('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>'),rt:SVG('<path d="M4 12a8 8 0 0 1 13.7-5.7L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.7 5.7L4 15.5M4 20v-4.5h4.5"/>')};
 
 /* ---------- durum ---------- */
 const LS='gunluk-defter-v1',LSS='gunluk-defter-ayar-v1';
 let days={},settings={routines:[]};
-const normTask=x=>({id:String(x.id||rid()),text:String(x.text||'').slice(0,200),time:x.time?String(x.time).slice(0,5):'',done:!!x.done,moved:!!x.moved,routine:x.routine?String(x.routine):''});
+const normTask=x=>({id:String(x.id||rid()),text:String(x.text||'').slice(0,200),time:x.time?String(x.time).slice(0,5):'',done:!!x.done,moved:!!x.moved,routine:x.routine?String(x.routine):'',...(x.important?{important:true}:{})});
 const norm=(v,k)=>({d:k,tasks:Array.isArray(v?.tasks)?v.tasks.filter(x=>x&&typeof x==='object').map(normTask):[],carried:!!v?.carried,ra:!!v?.ra,note:String(v?.note||'')});
 const normS=v=>({routines:Array.isArray(v?.routines)?v.routines.filter(r=>r&&r.id).map(r=>({id:String(r.id),text:String(r.text||''),time:r.time?String(r.time):''})):[]});
 try{const c=JSON.parse(localStorage.getItem(LS)||'{}');for(const k of Object.keys(c||{}))if(/^\d{4}-\d\d-\d\d$/.test(k))days[k]=norm(c[k],k)}catch(e){}
@@ -286,10 +289,11 @@ function carrySource(){const today=keyOf(0);if(day(today).carried)return null;
 /* ---------- liste: anahtarlı, yalnızca değişeni günceller ---------- */
 const rows=new Map();
 function rowEl(id){let li=rows.get(id);if(li)return li;li=document.createElement('li');li.className='task';li.dataset.id=id;li.tabIndex=0;
-  li.innerHTML=`<button class="chk" tabindex="-1"><span><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></button><div class="body"><span class="tm"></span><span class="tx"></span><span class="rti" title="Her gün tekrarlanan iş">${IC.rt}</span><span class="tag">Sıradaki</span></div><div class="acts"><button class="ed" tabindex="-1" title="Düzenle" aria-label="Düzenle">${IC.ed}</button><button class="rt" tabindex="-1"></button><button class="mv" tabindex="-1"></button><button class="del" tabindex="-1" title="Sil (Delete)" aria-label="Sil">${IC.del}</button><span class="grip" title="Sürükleyerek sırala">${IC.grip}</span></div>`;
+  li.innerHTML=`<button class="chk" tabindex="-1"><span><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></button><div class="body"><span class="impd" title="Önemli"></span><span class="tm"></span><span class="tx"></span><span class="rti" title="Her gün tekrarlanan iş">${IC.rt}</span><span class="tag">Sıradaki</span></div><div class="acts"><button class="ed" tabindex="-1" title="Düzenle" aria-label="Düzenle">${IC.ed}</button><button class="imp" tabindex="-1">${IC.imp}</button><button class="rt" tabindex="-1"></button><button class="mv" tabindex="-1"></button><button class="del" tabindex="-1" title="Sil (Delete)" aria-label="Sil">${IC.del}</button><span class="grip" title="Sürükleyerek sırala">${IC.grip}</span></div>`;
   li.querySelector('.rt').innerHTML=IC.rt;rows.set(id,li);return li}
-function paint(li,t,isNext){const sig=[t.text,t.time,t.done,t.routine,isNext,view].join('|');if(li._s===sig)return;li._s=sig;
-  li.classList.toggle('done',t.done);li.classList.toggle('next',isNext);
+function paint(li,t,isNext){const sig=[t.text,t.time,t.done,t.routine,t.important,isNext,view].join('|');if(li._s===sig)return;li._s=sig;
+  li.classList.toggle('done',t.done);li.classList.toggle('next',isNext);li.querySelector('.impd').hidden=!t.important;
+  const im=li.querySelector('.imp');im.classList.toggle('on',!!t.important);im.title=t.important?'Önemli işaretini kaldır (I)':'Önemli olarak işaretle (I)';im.setAttribute('aria-label',im.title);im.setAttribute('aria-pressed',!!t.important);
   const c=li.querySelector('.chk');c.setAttribute('aria-pressed',t.done);c.setAttribute('aria-label',t.done?'Yapılmadı yap':'Yapıldı işaretle');
   const tm=li.querySelector('.tm');tm.textContent=t.time;tm.hidden=!t.time;li.querySelector('.tx').textContent=t.text;
   li.querySelector('.tag').hidden=!isNext;li.querySelector('.rti').hidden=!t.routine;
@@ -333,6 +337,7 @@ function renderHist(today){
     el.innerHTML=`<summary><span class="hd"></span><span class="hp">${n} / ${t.length}</span><span class="hb"><i style="width:${n/t.length*100}%"></i></span></summary><ul></ul>`;
     const hd=el.querySelector('.hd');hd.textContent=k===today?'Bugün':fmtDay(d);const sm=document.createElement('small');sm.textContent=fmtW(d);hd.appendChild(sm);
     const ul=el.querySelector('ul');for(const x of t){const li=document.createElement('li');li.className=x.done?'d':x.moved?'m':'';
+      if(x.important){const s=document.createElement('span');s.className='impd';s.title='Önemli';li.appendChild(s)}
       if(x.time){const s=document.createElement('span');s.className='tm';s.textContent=x.time;li.appendChild(s)}
       const s=document.createElement('span');s.className='tx';s.textContent=x.text;li.appendChild(s);
       if(x.moved){const p=document.createElement('span');p.className='pill';p.textContent='taşındı';li.appendChild(p)}ul.appendChild(li)}
@@ -346,6 +351,7 @@ function toggle(id){const f=find(id);if(!f.t)return;f.t.done=!f.t.done;save(f.k)
 function del(id){const f=find(id);if(!f.t)return;f.ts.splice(f.i,1);save(f.k);render();
   const{k,t,i}=f;toast('İş silindi',()=>{const ts=day(k).tasks;ts.splice(Math.min(i,ts.length),0,t);save(k);render()});return f.i}
 function moveDay(id){const f=find(id);if(!f.t)return;const to=view==='yarin'?keyOf(0):keyOf(1);if(view==='bugun')applyRoutines(to);f.ts.splice(f.i,1);day(to).tasks.push({...f.t,done:false});save(f.k,to);render();toast(view==='yarin'?'Bugüne alındı':'Yarına ertelendi');return f.i}
+function toggleImportant(id){const f=find(id);if(!f.t)return;if(f.t.important)delete f.t.important;else f.t.important=true;save(f.k);render()}
 function toggleRoutine(id){const f=find(id);if(!f.t)return;
   if(f.t.routine){settings.routines=settings.routines.filter(r=>r.id!==f.t.routine);f.t.routine='';toast('Rutinden çıkarıldı')}
   else{const r={id:rid(),text:f.t.text,time:f.t.time};settings.routines.push(r);f.t.routine=r.id;
@@ -360,7 +366,7 @@ function startEdit(id){const f=find(id),li=rows.get(id);if(!f.t||!li)return;edit
     inp.remove();body.hidden=false;li._s=null;render();li.focus()};
   inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();end(true)}else if(e.key==='Escape'){e.preventDefault();end(false)}});inp.addEventListener('blur',()=>end(true))}
 function copyPlan(){const k=viewKey(),d=view==='yarin'?dateOf(1):dateOf(0),D=day(k);
-  const txt=[fmtDay(d)+' '+fmtW(d),'',...D.tasks.map(t=>(t.done?'[x] ':'[ ] ')+(t.time?t.time+' ':'')+t.text),...(D.note?['','Not: '+D.note]:[])].join('\n');
+  const txt=[fmtDay(d)+' '+fmtW(d),'',...D.tasks.map(t=>(t.done?'[x] ':'[ ] ')+(t.important?'! ':'')+(t.time?t.time+' ':'')+t.text),...(D.note?['','Not: '+D.note]:[])].join('\n');
   navigator.clipboard.writeText(txt).then(()=>toast('Plan panoya kopyalandı'),()=>toast('Kopyalanamadı'))}
 
 /* ---------- yedek: JSON dışa / içe aktarma ---------- */
@@ -397,7 +403,7 @@ $('#add').addEventListener('submit',e=>{e.preventDefault();const p=parse($('#inp
 $('#inp').addEventListener('keydown',e=>{if(e.key==='ArrowUp'&&!e.target.value){e.preventDefault();focusRow(1e9)}else if(e.key==='Escape')e.target.blur()});
 $('#undo').onclick=()=>{const f=undoFn;undoFn=null;$('#toast').classList.remove('on');if(f)f()};
 $('#list').addEventListener('click',e=>{const li=e.target.closest('.task');if(!li||editing)return;const id=li.dataset.id;
-  if(e.target.closest('.chk'))toggle(id);else if(e.target.closest('.del'))del(id);else if(e.target.closest('.mv'))moveDay(id);else if(e.target.closest('.rt'))toggleRoutine(id);
+  if(e.target.closest('.chk'))toggle(id);else if(e.target.closest('.del'))del(id);else if(e.target.closest('.mv'))moveDay(id);else if(e.target.closest('.rt'))toggleRoutine(id);else if(e.target.closest('.imp'))toggleImportant(id);
   else if(e.target.closest('.ed'))startEdit(id);
   else if(touch.matches&&e.target.closest('.body')){const on=!li.classList.contains('sel');for(const r of rows.values())r.classList.remove('sel');li.classList.toggle('sel',on)}});
 $('#list').addEventListener('dblclick',e=>{const b=e.target.closest('.body');if(b)startEdit(b.closest('.task').dataset.id)});
@@ -407,7 +413,8 @@ $('#list').addEventListener('keydown',e=>{const li=e.target.closest('.task');if(
   else if(k==='Enter'||k==='e'){e.preventDefault();startEdit(id)}
   else if(k==='Delete'||k==='Backspace'){e.preventDefault();focusRow(del(id))}
   else if(k==='t'){e.preventDefault();focusRow(moveDay(id))}
-  else if(k==='r'){e.preventDefault();toggleRoutine(id);rows.get(id)?.focus()}});
+  else if(k==='r'){e.preventDefault();toggleRoutine(id);rows.get(id)?.focus()}
+  else if(k==='i'){e.preventDefault();toggleImportant(id);rows.get(id)?.focus()}});
 $('#list').addEventListener('pointerdown',e=>{const g=e.target.closest('.grip');if(!g||editing)return;e.preventDefault();const li=g.closest('.task'),ul=$('#list');li.classList.add('drag');g.setPointerCapture(e.pointerId);
   const mv=ev=>{const y=ev.clientY,p=li.previousElementSibling,n=li.nextElementSibling;
     if(p){const r=p.getBoundingClientRect();if(y<r.top+r.height/2){ul.insertBefore(li,p);return}}if(n){const r=n.getBoundingClientRect();if(y>r.top+r.height/2)ul.insertBefore(n,li)}};
@@ -446,7 +453,7 @@ function renderPanel(){if(panel.hidden)return;
 <h3 id="keysH">Klavye kısayolları</h3><div class="keys">
 <kbd>/</kbd><span>Yeni iş yaz</span><kbd>1 2 3</kbd><span>Bugün, Yarın, Geçmiş</span><kbd>↑ ↓</kbd><span>İşler arasında gez</span>
 <kbd>Boşluk</kbd><span>Yapıldı / yapılmadı</span><kbd>Enter</kbd><span>Düzenle</span><kbd>Alt ↑ ↓</kbd><span>Sırayı değiştir</span>
-<kbd>T</kbd><span>Yarına ertele / bugüne al</span><kbd>R</kbd><span>Rutin yap</span><kbd>Delete</kbd><span>Sil</span><kbd>Ctrl Shift D</kbd><span>Uygulamayı aç (kurulu sürüm)</span></div>`;
+<kbd>T</kbd><span>Yarına ertele / bugüne al</span><kbd>I</kbd><span>Önemli işaretle</span><kbd>R</kbd><span>Rutin yap</span><kbd>Delete</kbd><span>Sil</span><kbd>Ctrl Shift D</kbd><span>Uygulamayı aç (kurulu sürüm)</span></div>`;
   const rl=panel.querySelector('#rl');if(!settings.routines.length)rl.innerHTML='<li><span style="color:var(--faint)">Henüz rutin yok</span></li>';
   for(const r of settings.routines){const li=document.createElement('li'),s=document.createElement('span');s.textContent=(r.time?r.time+'  ':'')+r.text;const b=document.createElement('button');b.innerHTML=IC.del;b.title='Rutini kaldır';b.setAttribute('aria-label','Rutini kaldır');
     b.onclick=()=>{settings.routines=settings.routines.filter(x=>x.id!==r.id);for(const k of [keyOf(0),keyOf(1)])days[k]?.tasks.forEach(t=>{if(t.routine===r.id){t.routine='';save(k)}});save('settings');render();renderPanel()};li.append(s,b);rl.appendChild(li)}
