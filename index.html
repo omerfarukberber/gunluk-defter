@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Günlük Defter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script type="application/json" id="claude-artifacts-manifest">{"permissions":["shortcuts","menu-bar"]}</script>
+<style>
+/* VOICE: sakin, net, iş odaklı — sabah açılıp gün boyu yanında duran bir araç
+   IDEA: bir ilaç kutusu etiketi gibi düzenli: tek renk vurgu, net bloklar, gereksiz süs yok
+   PICTURE: liste uygulamanın kendisi; sıradaki iş zümrüt şeritle öne çıkıyor
+   COLOUR and TYPE: beyaz zemin, siyah metin, zümrüt vurgu, devreden işler için pembe blok; Schibsted Grotesk
+   LAYOUT: tek sütun, üstte tarih + sekmeler, ilerleme, liste, ekleme satırı, günün notu */
+:root{color-scheme:light dark;
+--bg:light-dark(#ffffff,#0b100d);--surf:light-dark(#f5f6f5,#131a16);--line:light-dark(#e7e9e7,#1f2923);
+--ink:light-dark(#111412,#eef2ef);--muted:light-dark(#69716c,#8d9890);--faint:light-dark(#a5aca7,#56615a);
+--acc:light-dark(#00a86b,#2fd08f);--accSoft:light-dark(#e3f6ee,#11291d);--onAcc:light-dark(#ffffff,#04140d);
+--pink:light-dark(#ffd6e0,#3a2128);--pinkInk:light-dark(#6b1d33,#ffc2d1);--red:light-dark(#d93a3f,#ff7a7f)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Schibsted Grotesk",system-ui,sans-serif;overflow-x:clip;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:8px}
+kbd{font:600 12px/1 "Schibsted Grotesk",sans-serif;background:var(--surf);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:3px 6px;color:var(--muted);white-space:nowrap}
+.app{max-width:720px;margin:0 auto;padding:clamp(24px,5vw,56px) max(4vw,14px) 40px}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 24px}
+h1{font-weight:800;font-size:clamp(32px,6vw,44px);line-height:1.05;letter-spacing:-.025em;margin:0}
+.wday{margin:6px 0 0;color:var(--muted);font-weight:500}
+.tools{display:flex;gap:8px;align-items:center}
+.tabs{display:flex;background:var(--surf);border-radius:10px;padding:3px}
+.tabs button{min-height:36px;padding:0 14px;border-radius:8px;font-weight:700;font-size:14px;color:var(--muted)}
+.tabs button[aria-selected=true]{background:var(--bg);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.ib{width:40px;height:40px;display:grid;place-items:center;border-radius:10px;color:var(--muted)}
+.ib:hover{background:var(--surf);color:var(--ink)}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.prog{display:flex;align-items:center;gap:14px;margin:28px 0 8px;font-size:14px;color:var(--muted);font-weight:500}
+.prog b{color:var(--ink);font-weight:700}
+.meter{flex:1;height:4px;background:var(--line);border-radius:9px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--acc);border-radius:9px;transition:width .35s}
+.carry{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;background:var(--pink);color:var(--pinkInk);border-radius:12px;padding:12px 12px 12px 16px;margin:16px 0 4px}
+.carry p{margin:0;flex:1 1 240px;font-size:15px}.carry b{font-weight:700}
+.carry button{min-height:36px;padding:0 14px;border-radius:9px;font-weight:700;font-size:14px}
+.carry .go{background:var(--pinkInk);color:var(--pink)}
+.list{list-style:none;margin:12px 0 0;padding:0}
+.task{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;min-height:52px;border-bottom:1px solid var(--line);position:relative;outline:none;border-radius:0}
+.task:focus-visible{background:var(--surf)}
+.task.next::before{content:"";position:absolute;left:-14px;top:12px;bottom:12px;width:3px;border-radius:3px;background:var(--acc)}
+.task.drag{z-index:2;background:var(--bg);box-shadow:0 8px 24px rgba(0,0,0,.14);border-radius:10px;border-color:transparent}
+.chk{width:44px;height:44px;display:grid;place-items:center}
+.chk span{width:20px;height:20px;border:2px solid var(--faint);border-radius:6px;display:grid;place-items:center;transition:background .15s,border-color .15s}
+.chk:hover span{border-color:var(--acc)}
+.chk svg{width:13px;height:13px;fill:none;stroke:var(--onAcc);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:22;stroke-dashoffset:22;transition:stroke-dashoffset .25s .05s}
+.done .chk span{background:var(--acc);border-color:var(--acc)}.done .chk svg{stroke-dashoffset:0}
+.body{padding:12px 8px 12px 2px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;cursor:text;overflow-wrap:anywhere}
+.tm{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.tx{font-size:16px;font-weight:500;transition:color .2s}
+.done .tx{color:var(--faint);text-decoration:line-through;text-decoration-thickness:1.5px}
+.done .tm{color:var(--faint)}
+.tag{font-size:11px;font-weight:700;color:var(--acc);background:var(--accSoft);border-radius:5px;padding:2px 7px;white-space:nowrap}
+.rti{color:var(--muted);display:inline-flex;align-self:center}.rti svg{width:14px;height:14px}
+.edit{width:100%;font:500 16px "Schibsted Grotesk",sans-serif;color:var(--ink);background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 8px 6px 0}
+.acts{position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:2px;padding:0 2px 0 24px;background:linear-gradient(to right,transparent,var(--bg) 20px);opacity:0;pointer-events:none;transition:opacity .12s}
+.task:focus-visible .acts{background:linear-gradient(to right,transparent,var(--surf) 20px)}
+.task:hover .acts,.task:focus-within .acts,.task:focus .acts{opacity:1;pointer-events:auto}
+@media(hover:none){.acts{position:static;transform:none;opacity:1;pointer-events:auto;background:none;padding:0}}
+.acts button,.grip{width:34px;height:34px;display:grid;place-items:center;color:var(--faint);border-radius:8px}
+.acts button:hover{color:var(--ink);background:var(--surf)}
+.acts .del:hover{color:var(--red)}.acts .rt.on{color:var(--acc)}
+.grip{cursor:grab;touch-action:none}.drag .grip{cursor:grabbing}
+.add{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;min-height:52px;border-bottom:1px solid var(--line)}
+.add>svg{justify-self:center;color:var(--faint)}
+.add input{height:50px;border:0;background:transparent;font:500 16px "Schibsted Grotesk",sans-serif;color:var(--ink);padding:0 8px 0 2px;outline:none}
+.add input::placeholder{color:var(--faint)}
+.add:focus-within>svg{color:var(--acc)}.add kbd{opacity:0;transition:opacity .15s}.add:focus-within kbd{opacity:1}
+.empty{margin:20px 0 4px 44px;color:var(--muted)}
+.notewrap{margin-top:28px}
+.notewrap label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px}
+textarea{width:100%;min-height:76px;resize:vertical;font:400 15px/1.55 "Schibsted Grotesk",sans-serif;color:var(--ink);background:var(--surf);border:1px solid transparent;border-radius:12px;padding:12px 14px;outline:none}
+textarea:focus{border-color:var(--acc);background:var(--bg)}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:28px 0 14px}
+.kpi{background:var(--surf);border-radius:12px;padding:14px 16px}
+.kpi b{display:block;font-size:clamp(24px,4vw,30px);font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.kpi span{font-size:13px;color:var(--muted);font-weight:500}
+.spark{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:6px;align-items:end;height:110px;padding:12px 2px 0;margin-bottom:8px}
+.spark div{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.spark i{width:100%;max-width:26px;border-radius:5px 5px 2px 2px;background:var(--acc);min-height:3px}
+.spark i.z{background:var(--line)}
+.spark small{font-size:11px;color:var(--faint);font-weight:600}
+.hday{border-bottom:1px solid var(--line)}
+.hday summary{display:grid;grid-template-columns:minmax(0,1fr) auto 80px;gap:14px;align-items:center;min-height:56px;cursor:pointer;list-style:none}
+.hday summary::-webkit-details-marker{display:none}
+.hd{font-weight:700}.hd small{color:var(--muted);font-weight:500;margin-left:8px;font-size:14px}
+.hp{font-weight:700;color:var(--muted);font-size:14px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.hb{height:4px;background:var(--line);border-radius:9px;overflow:hidden}.hb i{display:block;height:100%;background:var(--acc)}
+.hday ul{list-style:none;margin:0;padding:0 0 14px}
+.hday li{display:flex;gap:10px;align-items:baseline;padding:5px 0;font-size:15px}
+.hday li::before{content:"";flex:none;width:10px;height:10px;border:2px solid var(--faint);border-radius:3px;transform:translateY(1px)}
+.hday li.d::before{background:var(--acc);border-color:var(--acc)}.hday li.d .tx{color:var(--faint);text-decoration:line-through}
+.hday li.m::before{border-style:dashed}
+.pill{font-size:11px;font-weight:700;color:var(--muted);background:var(--surf);border-radius:5px;padding:2px 7px;white-space:nowrap}
+.hnote{margin:0 0 14px;padding:10px 12px;background:var(--surf);border-radius:10px;color:var(--muted);font-size:14px;white-space:pre-wrap}
+.hempty{color:var(--muted);padding:24px 0}
+footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;margin-top:28px;font-size:13px;color:var(--faint);font-weight:500}
+footer button{color:var(--muted);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.panel{position:fixed;top:12px;right:12px;bottom:12px;width:min(380px,calc(100vw - 24px));background:var(--bg);border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.2);padding:20px;overflow-y:auto;z-index:10}
+.panel h2{font-size:20px;font-weight:800;margin:0;letter-spacing:-.01em}
+.panel h3{font-size:13px;font-weight:700;color:var(--muted);margin:24px 0 8px}
+.panel p{margin:0 0 10px;font-size:14px;color:var(--muted)}
+.phead{display:flex;justify-content:space-between;align-items:center}
+.rlist{list-style:none;margin:0 0 8px;padding:0}
+.rlist li{display:flex;align-items:center;gap:8px;min-height:40px;border-bottom:1px solid var(--line);font-size:15px}
+.rlist li span{flex:1}.rlist button{width:32px;height:32px;display:grid;place-items:center;color:var(--faint);border-radius:8px}.rlist button:hover{color:var(--red);background:var(--surf)}
+.radd{display:flex;gap:8px}.radd input{flex:1;height:40px;border:1px solid var(--line);border-radius:9px;padding:0 10px;font:500 15px "Schibsted Grotesk",sans-serif;background:var(--bg);color:var(--ink)}
+.btn{min-height:40px;padding:0 14px;border-radius:9px;font-weight:700;font-size:14px;background:var(--ink);color:var(--bg)}
+.btn.sec{background:var(--surf);color:var(--ink)}
+.ok{color:var(--acc);font-weight:700;font-size:14px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:14px;align-items:center}
+.keys span{color:var(--muted)}.keys kbd{justify-self:start}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,16px);opacity:0;pointer-events:none;background:var(--ink);color:var(--bg);border-radius:12px;padding:8px 8px 8px 16px;display:flex;gap:12px;align-items:center;min-height:44px;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:.2s;font-weight:600;font-size:14px;z-index:20}
+.toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast button{color:var(--acc);font-weight:800;min-height:32px;padding:0 10px;border-radius:8px}
+[hidden]{display:none!important}
+@media(max-width:600px){.top{flex-direction:column;align-items:stretch}.tools{justify-content:space-between}.task.next::before{left:-8px}.hday summary{grid-template-columns:minmax(0,1fr) auto}.hb{display:none}.kpi{padding:12px}.spark{gap:3px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div><h1 id="date">Bugün</h1><p class="wday" id="wday"></p></div>
+    <div class="tools">
+      <nav class="tabs" role="tablist" aria-label="Görünüm">
+        <button role="tab" data-v="bugun" aria-selected="true">Bugün</button>
+        <button role="tab" data-v="yarin" aria-selected="false">Yarın</button>
+        <button role="tab" data-v="gecmis" aria-selected="false">Geçmiş</button>
+      </nav>
+      <button class="ib" id="copyBtn" title="Planı panoya kopyala" aria-label="Planı kopyala"><svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></button>
+      <button class="ib" id="setBtn" title="Ayarlar" aria-label="Ayarlar" aria-expanded="false"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+    </div>
+  </header>
+  <div class="prog" id="prog"><span id="progt"></span><div class="meter"><i id="progb" style="width:0"></i></div></div>
+  <div class="carry" id="carry" hidden></div>
+  <section id="dayView">
+    <ul class="list" id="list" aria-label="İşler"></ul>
+    <p class="empty" id="empty" hidden></p>
+    <form class="add" id="add" autocomplete="off">
+      <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      <input id="inp" maxlength="200" aria-label="Yeni iş" placeholder="Yeni iş ekle (örn. 14:00 Rapor yaz)">
+      <kbd>Enter</kbd>
+    </form>
+    <div class="notewrap"><label for="note">Günün notu</label><textarea id="note" maxlength="2000" placeholder="Kısa bir hatırlatma ya da günün değerlendirmesi…"></textarea></div>
+  </section>
+  <section id="histView" hidden>
+    <div class="kpis" id="kpis"></div>
+    <div class="spark" id="spark" aria-label="Son 14 gün tamamlama oranı"></div>
+    <div id="hlist"></div>
+  </section>
+  <footer><span id="status">Yükleniyor…</span><button id="keysBtn">Klavye kısayolları</button></footer>
+</div>
+<aside class="panel" id="panel" hidden aria-label="Ayarlar"></aside>
+<div class="toast" id="toast" role="status"><span id="toastt"></span><button id="undo">Geri al</button></div>
+<script>
+{
+const $=s=>document.querySelector(s);
+const pad=n=>String(n).padStart(2,'0');
+const dateOf=off=>{const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+off);return d};
+const keyOfDate=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const keyOf=off=>keyOfDate(dateOf(off));
+const parseKey=k=>{const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d,12)};
+const fmtDay=d=>d.toLocaleDateString('tr-TR',{day:'numeric',month:'long'});
+const fmtW=d=>d.toLocaleDateString('tr-TR',{weekday:'long'});
+const rid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+const clone=o=>JSON.parse(JSON.stringify(o));
+const SVG=p=>`<svg class="i" viewBox="0 0 24 24">${p}</svg>`;
+const IC={fwd:SVG('<path d="M5 12h13M13 6l6 6-6 6"/>'),back:SVG('<path d="M19 12H6M11 6l-6 6 6 6"/>'),del:SVG('<path d="M6 6l12 12M18 6L6 18"/>'),
+grip:SVG('<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="3.2"/>'),rt:SVG('<path d="M4 12a8 8 0 0 1 13.7-5.7L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.7 5.7L4 15.5M4 20v-4.5h4.5"/>')};
+
+/* ---------- durum ---------- */
+const LS='gunluk-defter-v1',LSS='gunluk-defter-ayar-v1';
+let days={},settings={routines:[]};
+const normTask=x=>({id:String(x.id||rid()),text:String(x.text||'').slice(0,200),time:x.time?String(x.time).slice(0,5):'',done:!!x.done,moved:!!x.moved,routine:x.routine?String(x.routine):''});
+const norm=(v,k)=>({d:k,tasks:Array.isArray(v?.tasks)?v.tasks.filter(x=>x&&typeof x==='object').map(normTask):[],carried:!!v?.carried,ra:!!v?.ra,note:String(v?.note||'')});
+const normS=v=>({routines:Array.isArray(v?.routines)?v.routines.filter(r=>r&&r.id).map(r=>({id:String(r.id),text:String(r.text||''),time:r.time?String(r.time):''})):[]});
+try{const c=JSON.parse(localStorage.getItem(LS)||'{}');for(const k of Object.keys(c||{}))if(/^\d{4}-\d\d-\d\d$/.test(k))days[k]=norm(c[k],k)}catch(e){}
+try{settings=normS(JSON.parse(localStorage.getItem(LSS)||'{}'))}catch(e){}
+let view='bugun',editing=null,col=null,ready=false,readyD=false,readyS=false;
+let desk=null,dock=null,perm=null,keyOn=false,trayOn=false,instState='unavailable',lastBadge=null;
+const day=k=>days[k]||(days[k]={d:k,tasks:[],carried:false,ra:false,note:''});
+const ST={ok:'Tüm değişiklikler kaydedildi',saving:'Kaydediliyor…',loading:'Yükleniyor…',offline:'Sunucuya ulaşılamıyor, bağlantı gelince kaydedilecek',local:'Kayıt yalnızca bu tarayıcıda tutuluyor',error:'Kaydedilemedi, tekrar denenecek'};
+let stNow='';const status=s=>{stNow=s;$('#status').textContent=ST[s]||s};
+
+/* ---------- kayıt kuyruğu: belge başına tek yazma, toplu ---------- */
+const dirty=new Set(),inflight=new Set();let saveT=null;
+const cache=()=>{try{localStorage.setItem(LS,JSON.stringify(days));localStorage.setItem(LSS,JSON.stringify(settings))}catch(e){}};
+function save(...keys){for(const k of keys)dirty.add(k);cache();if(!col){dirty.clear();return}status('saving');clearTimeout(saveT);saveT=setTimeout(flush,350)}
+function flush(){for(const k of [...dirty]){if(inflight.has(k))continue;dirty.delete(k);inflight.add(k);
+  const body=k==='settings'?clone(settings):clone({...days[k],d:k});
+  const write=r=>col.doc(k).set(body).catch(e=>{if(r&&(!e||e.code==='unavailable'))return new Promise(z=>setTimeout(z,700+Math.random()*900)).then(()=>write(false));status('error');dirty.add(k)});
+  write(true).finally(()=>{inflight.delete(k);if(dirty.size){clearTimeout(saveT);saveT=setTimeout(flush,stNow==='error'?4000:250)}else if(!inflight.size&&stNow!=='error')status('ok')})}}
+
+/* ---------- yardımcılar ---------- */
+const parse=s=>{const m=s.match(/^\s*(\d{1,2})[:.](\d{2})\s+(.+)$/);if(m&&+m[1]<24&&+m[2]<60)return{time:pad(+m[1])+':'+m[2],text:m[3].trim()};return{time:'',text:s.trim()}};
+const viewKey=()=>view==='yarin'?keyOf(1):keyOf(0);
+const find=(id,k=viewKey())=>{const ts=day(k).tasks,i=ts.findIndex(t=>t.id===id);return{ts,i,t:ts[i],k}};
+function applyRoutines(k){if(!ready||k<keyOf(0))return;const d=day(k);if(d.ra)return;d.ra=true;
+  const have=new Set(d.tasks.map(t=>t.routine).filter(Boolean)),add=settings.routines.filter(r=>!have.has(r.id)).map(r=>({id:rid(),text:r.text,time:r.time,done:false,moved:false,routine:r.id}));
+  if(add.length){d.tasks=[...add,...d.tasks];save(k)}}
+function carrySource(){const today=keyOf(0);if(day(today).carried)return null;
+  for(const k of Object.keys(days).filter(k=>k<today).sort().reverse()){if(!days[k].tasks.length)continue;const left=days[k].tasks.filter(t=>!t.done&&!t.moved&&!t.routine);return left.length?{k,left}:null}return null}
+
+/* ---------- liste: anahtarlı, yalnızca değişeni günceller ---------- */
+const rows=new Map();
+function rowEl(id){let li=rows.get(id);if(li)return li;li=document.createElement('li');li.className='task';li.dataset.id=id;li.tabIndex=0;
+  li.innerHTML=`<button class="chk" tabindex="-1"><span><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></button><div class="body"><span class="tm"></span><span class="tx"></span><span class="rti" title="Her gün tekrarlanan iş">${IC.rt}</span><span class="tag">Sıradaki</span></div><div class="acts"><button class="rt" tabindex="-1"></button><button class="mv" tabindex="-1"></button><button class="del" tabindex="-1" title="Sil (Delete)" aria-label="Sil">${IC.del}</button><span class="grip" title="Sürükleyerek sırala">${IC.grip}</span></div>`;
+  li.querySelector('.rt').innerHTML=IC.rt;rows.set(id,li);return li}
+function paint(li,t,isNext){const sig=[t.text,t.time,t.done,t.routine,isNext,view].join('|');if(li._s===sig)return;li._s=sig;
+  li.classList.toggle('done',t.done);li.classList.toggle('next',isNext);
+  const c=li.querySelector('.chk');c.setAttribute('aria-pressed',t.done);c.setAttribute('aria-label',t.done?'Yapılmadı yap':'Yapıldı işaretle');
+  const tm=li.querySelector('.tm');tm.textContent=t.time;tm.hidden=!t.time;li.querySelector('.tx').textContent=t.text;
+  li.querySelector('.tag').hidden=!isNext;li.querySelector('.rti').hidden=!t.routine;
+  const rt=li.querySelector('.rt');rt.classList.toggle('on',!!t.routine);rt.title=t.routine?'Rutinden çıkar (R)':'Her gün tekrarla (R)';rt.setAttribute('aria-label',rt.title);
+  const mv=li.querySelector('.mv');mv.innerHTML=view==='yarin'?IC.back:IC.fwd;mv.title=view==='yarin'?'Bugüne al (T)':'Yarına ertele (T)';mv.setAttribute('aria-label',mv.title)}
+function renderList(k){const ts=day(k).tasks,first=view==='bugun'?ts.find(t=>!t.done):null,ul=$('#list'),keep=new Set();
+  ts.forEach((t,i)=>{const li=rowEl(t.id);keep.add(t.id);paint(li,t,t===first);if(ul.children[i]!==li)ul.insertBefore(li,ul.children[i]||null)});
+  for(const [id,li] of rows)if(!keep.has(id)){li.remove();rows.delete(id)}}
+
+function render(){if(editing)return;
+  const today=keyOf(0),hist=view==='gecmis';
+  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===view));
+  $('#dayView').hidden=hist;$('#histView').hidden=!hist;$('#prog').hidden=hist;$('#copyBtn').hidden=hist;
+  if(hist){$('#date').textContent='Geçmiş';$('#wday').textContent='Son günlerin özeti';$('#carry').hidden=true;renderHist(today);updateBadge();return}
+  const k=viewKey();applyRoutines(k);
+  const d=view==='yarin'?dateOf(1):dateOf(0),D=day(k),ts=D.tasks,done=ts.filter(t=>t.done).length;
+  $('#date').textContent=fmtDay(d);$('#wday').textContent=(view==='yarin'?'Yarın, ':'')+fmtW(d);
+  $('#progt').innerHTML=view==='yarin'?(ts.length?`<b>${ts.length}</b> iş planlandı`:'Henüz plan yok'):(ts.length?`<b>${done}/${ts.length}</b> tamamlandı`:'Plan boş');
+  $('#progb').style.width=(view==='bugun'&&ts.length?done/ts.length*100:0)+'%';
+  renderList(k);
+  const em=$('#empty');em.hidden=!!ts.length;em.textContent=view==='yarin'?'Yarını şimdiden planlamak istersen aşağıya yaz.':'Bugün için plan yok. İlk işi yazarak başla.';
+  const nt=$('#note');if(document.activeElement!==nt&&nt.value!==D.note)nt.value=D.note;
+  const c=view==='bugun'?carrySource():null,box=$('#carry');box.hidden=!c;
+  if(c){box.innerHTML='<p><b></b> <span></span></p><button class="go">Bugüne taşı</button><button class="skip">Gerek yok</button>';
+    box.querySelector('b').textContent=(c.k===keyOf(-1)?'Dünden':fmtDay(parseKey(c.k))+' gününden')+' '+c.left.length+' iş kaldı.';
+    box.querySelector('span').textContent=c.left.slice(0,3).map(t=>t.text).join(', ')+(c.left.length>3?'…':'');box.querySelector('.go').dataset.k=c.k}
+  updateBadge()}
+
+function renderHist(today){
+  const ks=Object.keys(days).filter(k=>k<=today&&days[k].tasks.length).sort().reverse();
+  let tot=0,dn=0;for(let i=0;i<7;i++){const t=days[keyOf(-i)]?.tasks||[];tot+=t.length;dn+=t.filter(x=>x.done).length}
+  let streak=0;for(let i=days[today]?.tasks.length?0:1;;i++){if(days[keyOf(-i)]?.tasks.length)streak++;else break}
+  const kp=$('#kpis');kp.innerHTML='<div class="kpi"><b></b><span>Son 7 gün tamamlama</span></div><div class="kpi"><b></b><span>Son 7 günde biten iş</span></div><div class="kpi"><b></b><span>Planlı gün serisi</span></div>';
+  const bs=kp.querySelectorAll('b');bs[0].textContent=tot?'%'+Math.round(dn/tot*100):'—';bs[1].textContent=dn;bs[2].textContent=streak+' gün';
+  let sp='';for(let i=13;i>=0;i--){const d=dateOf(-i),t=days[keyOfDate(d)]?.tasks||[],r=t.length?t.filter(x=>x.done).length/t.length:0;
+    sp+=`<div title="${fmtDay(d)}: ${t.length?Math.round(r*100)+'%':'plan yok'}"><i class="${t.length&&r?'':'z'}" style="height:${t.length?Math.max(r*100,4):4}%"></i><small>${d.toLocaleDateString('tr-TR',{weekday:'narrow'})}</small></div>`}
+  $('#spark').innerHTML=sp;
+  const hl=$('#hlist');hl.textContent='';
+  if(!ks.length){hl.innerHTML='<p class="hempty">Henüz geçmiş yok. Günlerin burada birikecek.</p>';return}
+  ks.forEach((k,i)=>{const t=days[k].tasks,n=t.filter(x=>x.done).length,d=parseKey(k),el=document.createElement('details');el.className='hday';if(i===0)el.open=true;
+    el.innerHTML=`<summary><span class="hd"></span><span class="hp">${n} / ${t.length}</span><span class="hb"><i style="width:${n/t.length*100}%"></i></span></summary><ul></ul>`;
+    const hd=el.querySelector('.hd');hd.textContent=k===today?'Bugün':fmtDay(d);const sm=document.createElement('small');sm.textContent=fmtW(d);hd.appendChild(sm);
+    const ul=el.querySelector('ul');for(const x of t){const li=document.createElement('li');li.className=x.done?'d':x.moved?'m':'';
+      if(x.time){const s=document.createElement('span');s.className='tm';s.textContent=x.time;li.appendChild(s)}
+      const s=document.createElement('span');s.className='tx';s.textContent=x.text;li.appendChild(s);
+      if(x.moved){const p=document.createElement('span');p.className='pill';p.textContent='taşındı';li.appendChild(p)}ul.appendChild(li)}
+    if(days[k].note){const p=document.createElement('p');p.className='hnote';p.textContent=days[k].note;el.appendChild(p)}hl.appendChild(el)})}
+
+/* ---------- işlemler ---------- */
+let lastDel=null,toastT=null;
+function toast(msg,undo){$('#toastt').textContent=msg;$('#undo').hidden=!undo;$('#toast').classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>$('#toast').classList.remove('on'),undo?6000:2500)}
+const focusRow=i=>{const r=$('#list').children;if(!r.length)return $('#inp').focus();r[Math.max(0,Math.min(i,r.length-1))].focus()};
+function toggle(id){const f=find(id);if(!f.t)return;f.t.done=!f.t.done;save(f.k);render()}
+function del(id){const f=find(id);if(!f.t)return;f.ts.splice(f.i,1);lastDel={k:f.k,t:f.t,i:f.i};save(f.k);render();toast('İş silindi',true);return f.i}
+function moveDay(id){const f=find(id);if(!f.t)return;const to=view==='yarin'?keyOf(0):keyOf(1);if(view==='bugun')applyRoutines(to);f.ts.splice(f.i,1);day(to).tasks.push({...f.t,done:false});save(f.k,to);render();toast(view==='yarin'?'Bugüne alındı':'Yarına ertelendi');return f.i}
+function toggleRoutine(id){const f=find(id);if(!f.t)return;
+  if(f.t.routine){settings.routines=settings.routines.filter(r=>r.id!==f.t.routine);f.t.routine='';toast('Rutinden çıkarıldı')}
+  else{const r={id:rid(),text:f.t.text,time:f.t.time};settings.routines.push(r);f.t.routine=r.id;
+    const other=view==='yarin'?keyOf(0):keyOf(1),o=days[other];if(o&&o.ra&&!o.tasks.some(t=>t.routine===r.id)){o.tasks.unshift({id:rid(),text:r.text,time:r.time,done:false,moved:false,routine:r.id});save(other)}
+    toast('Artık her gün eklenecek')}
+  save(f.k,'settings');render();renderPanel()}
+function reorder(id,dir){const f=find(id),j=f.i+dir;if(!f.t||j<0||j>=f.ts.length)return;[f.ts[f.i],f.ts[j]]=[f.ts[j],f.ts[f.i]];save(f.k);render();rows.get(id)?.focus()}
+function startEdit(id){const f=find(id),li=rows.get(id);if(!f.t||!li)return;editing=id;
+  const body=li.querySelector('.body');body.hidden=true;const inp=document.createElement('input');inp.className='edit';inp.maxLength=200;inp.value=(f.t.time?f.t.time+' ':'')+f.t.text;body.after(inp);inp.focus();inp.select();
+  let fin=false;const end=ok=>{if(fin)return;fin=true;editing=null;if(ok){const p=parse(inp.value),g=find(id);if(p.text&&g.t&&(g.t.text!==p.text||g.t.time!==p.time)){g.t.text=p.text;g.t.time=p.time;
+      const r=g.t.routine&&settings.routines.find(x=>x.id===g.t.routine);if(r){r.text=p.text;r.time=p.time;save('settings')}save(g.k)}}
+    inp.remove();body.hidden=false;li._s=null;render();li.focus()};
+  inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();end(true)}else if(e.key==='Escape'){e.preventDefault();end(false)}});inp.addEventListener('blur',()=>end(true))}
+function copyPlan(){const k=viewKey(),d=view==='yarin'?dateOf(1):dateOf(0),D=day(k);
+  const txt=[fmtDay(d)+' '+fmtW(d),'',...D.tasks.map(t=>(t.done?'[x] ':'[ ] ')+(t.time?t.time+' ':'')+t.text),...(D.note?['','Not: '+D.note]:[])].join('\n');
+  navigator.clipboard.writeText(txt).then(()=>toast('Plan panoya kopyalandı'),()=>toast('Kopyalanamadı'))}
+
+/* ---------- olaylar ---------- */
+const setView=v=>{if(editing)return;view=v;render()};
+document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.v)});
+$('#add').addEventListener('submit',e=>{e.preventDefault();const p=parse($('#inp').value);if(!p.text)return;const k=viewKey();day(k).tasks.push({id:rid(),text:p.text,time:p.time,done:false,moved:false,routine:''});$('#inp').value='';save(k);render()});
+$('#inp').addEventListener('keydown',e=>{if(e.key==='ArrowUp'&&!e.target.value){e.preventDefault();focusRow(1e9)}else if(e.key==='Escape')e.target.blur()});
+$('#undo').onclick=()=>{if(!lastDel)return;const{k,t,i}=lastDel,ts=day(k).tasks;ts.splice(Math.min(i,ts.length),0,t);lastDel=null;save(k);render();$('#toast').classList.remove('on')};
+$('#list').addEventListener('click',e=>{const li=e.target.closest('.task');if(!li||editing)return;const id=li.dataset.id;
+  if(e.target.closest('.chk'))toggle(id);else if(e.target.closest('.del'))del(id);else if(e.target.closest('.mv'))moveDay(id);else if(e.target.closest('.rt'))toggleRoutine(id)});
+$('#list').addEventListener('dblclick',e=>{const b=e.target.closest('.body');if(b)startEdit(b.closest('.task').dataset.id)});
+$('#list').addEventListener('keydown',e=>{const li=e.target.closest('.task');if(!li||e.target!==li||editing)return;const id=li.dataset.id,i=[...li.parentNode.children].indexOf(li),k=e.key;
+  if(k==='ArrowDown'||k==='ArrowUp'){e.preventDefault();const dir=k==='ArrowDown'?1:-1;if(e.altKey)reorder(id,dir);else if(dir>0&&i===li.parentNode.children.length-1)$('#inp').focus();else focusRow(i+dir)}
+  else if(k===' '||k==='x'){e.preventDefault();toggle(id);rows.get(id)?.focus()}
+  else if(k==='Enter'||k==='e'){e.preventDefault();startEdit(id)}
+  else if(k==='Delete'||k==='Backspace'){e.preventDefault();focusRow(del(id))}
+  else if(k==='t'){e.preventDefault();focusRow(moveDay(id))}
+  else if(k==='r'){e.preventDefault();toggleRoutine(id);rows.get(id)?.focus()}});
+$('#list').addEventListener('pointerdown',e=>{const g=e.target.closest('.grip');if(!g||editing)return;e.preventDefault();const li=g.closest('.task'),ul=$('#list');li.classList.add('drag');g.setPointerCapture(e.pointerId);
+  const mv=ev=>{const y=ev.clientY,p=li.previousElementSibling,n=li.nextElementSibling;
+    if(p){const r=p.getBoundingClientRect();if(y<r.top+r.height/2){ul.insertBefore(li,p);return}}if(n){const r=n.getBoundingClientRect();if(y>r.top+r.height/2)ul.insertBefore(n,li)}};
+  const up=()=>{g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up);g.removeEventListener('pointercancel',up);li.classList.remove('drag');
+    const k=viewKey(),ts=day(k).tasks,next=[...ul.children].map(x=>ts.find(t=>t.id===x.dataset.id)).filter(Boolean);
+    if(next.length===ts.length&&next.some((t,i)=>t!==ts[i])){day(k).tasks=next;save(k)}render()};
+  g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up)});
+$('#carry').addEventListener('click',e=>{const today=keyOf(0),go=e.target.closest('.go');
+  if(go){const k=go.dataset.k,left=day(k).tasks.filter(t=>!t.done&&!t.moved&&!t.routine);left.forEach(t=>{t.moved=true;day(today).tasks.push({id:rid(),text:t.text,time:t.time,done:false,moved:false,routine:''})});day(today).carried=true;save(k,today);render();toast(left.length+' iş bugüne taşındı')}
+  else if(e.target.closest('.skip')){day(today).carried=true;save(today);render()}});
+$('#note').addEventListener('input',e=>{const k=viewKey();day(k).note=e.target.value;save(k)});
+$('#copyBtn').onclick=copyPlan;
+const panel=$('#panel');
+const openPanel=on=>{panel.hidden=!on;$('#setBtn').setAttribute('aria-expanded',on);if(on){renderPanel();panel.querySelector('button')?.focus()}};
+$('#setBtn').onclick=()=>openPanel(panel.hidden);$('#keysBtn').onclick=()=>{openPanel(true);panel.querySelector('#keysH')?.scrollIntoView()};
+document.addEventListener('pointerdown',e=>{if(!panel.hidden&&!panel.contains(e.target)&&!e.target.closest('#setBtn,#keysBtn'))openPanel(false)});
+document.addEventListener('keydown',e=>{const t=document.activeElement?.tagName,typing=t==='INPUT'||t==='TEXTAREA';
+  if(e.key==='Escape'&&!panel.hidden){openPanel(false);return}if(typing||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(e.key==='/'||e.key==='n'){if(view==='gecmis')setView('bugun');e.preventDefault();$('#inp').focus()}
+  else if(e.key==='1'||e.key==='2'||e.key==='3'){setView(['bugun','yarin','gecmis'][+e.key-1])}
+  else if(e.key==='?'){openPanel(true)}});
+
+/* ---------- ayarlar paneli ---------- */
+function renderPanel(){if(panel.hidden)return;
+  let dk='';
+  if(desk&&desk.permissions){const on=keyOn&&trayOn;dk=`<p>Ctrl+Shift+D ile uygulamayı her yerden aç, kalan iş sayısını tepside gör.</p>${on?'<span class="ok">Kısayol ve tepsi simgesi açık</span>':`<button class="btn" id="enDesk">Kısayol ve tepsiyi etkinleştir</button>`}${perm&&(perm.shortcuts==='denied'||perm['menu-bar']==='denied')?' <button class="btn sec" id="mgDesk">İzinleri yönet</button>':''}`}
+  else if(instState==='available')dk='<p>Uygulamayı kendi penceresinde açmak ve kısayol kullanmak için kur.</p><button class="btn" id="inDesk">Masaüstüne kur</button>';
+  else if(instState==='installed')dk='<p>Bu bilgisayarda kurulu. Masaüstü özellikleri kurulu uygulamanın içinde açılır.</p>';
+  else dk='<p>Masaüstü özellikleri Claude masaüstü uygulamasından kurulan sürümde çalışır.</p>';
+  panel.innerHTML=`<div class="phead"><h2>Ayarlar</h2><button class="ib" id="pClose" aria-label="Kapat">${IC.del}</button></div>
+<h3>Rutinler</h3><p>Her güne otomatik eklenen işler. Bir işin üzerindeki tekrar simgesiyle de ekleyebilirsin.</p><ul class="rlist" id="rl"></ul>
+<form class="radd" id="rAdd"><input id="rInp" maxlength="200" placeholder="örn. 08:00 Spor" aria-label="Yeni rutin"><button class="btn">Ekle</button></form>
+<h3>Masaüstü</h3>${dk}
+<h3 id="keysH">Klavye kısayolları</h3><div class="keys">
+<kbd>/</kbd><span>Yeni iş yaz</span><kbd>1 2 3</kbd><span>Bugün, Yarın, Geçmiş</span><kbd>↑ ↓</kbd><span>İşler arasında gez</span>
+<kbd>Boşluk</kbd><span>Yapıldı / yapılmadı</span><kbd>Enter</kbd><span>Düzenle</span><kbd>Alt ↑ ↓</kbd><span>Sırayı değiştir</span>
+<kbd>T</kbd><span>Yarına ertele / bugüne al</span><kbd>R</kbd><span>Rutin yap</span><kbd>Delete</kbd><span>Sil</span><kbd>Ctrl Shift D</kbd><span>Uygulamayı aç (kurulu sürüm)</span></div>`;
+  const rl=panel.querySelector('#rl');if(!settings.routines.length)rl.innerHTML='<li><span style="color:var(--faint)">Henüz rutin yok</span></li>';
+  for(const r of settings.routines){const li=document.createElement('li'),s=document.createElement('span');s.textContent=(r.time?r.time+'  ':'')+r.text;const b=document.createElement('button');b.innerHTML=IC.del;b.title='Rutini kaldır';b.setAttribute('aria-label','Rutini kaldır');
+    b.onclick=()=>{settings.routines=settings.routines.filter(x=>x.id!==r.id);for(const k of [keyOf(0),keyOf(1)])days[k]?.tasks.forEach(t=>{if(t.routine===r.id){t.routine='';save(k)}});save('settings');render();renderPanel()};li.append(s,b);rl.appendChild(li)}
+  panel.querySelector('#pClose').onclick=()=>openPanel(false);
+  panel.querySelector('#rAdd').onsubmit=e=>{e.preventDefault();const p=parse(panel.querySelector('#rInp').value);if(!p.text)return;const r={id:rid(),text:p.text,time:p.time};settings.routines.push(r);
+    for(const k of [keyOf(0),keyOf(1)]){const d=days[k];if(d&&d.ra){d.tasks.unshift({id:rid(),text:r.text,time:r.time,done:false,moved:false,routine:r.id});save(k)}}save('settings');render();renderPanel();panel.querySelector('#rInp').focus()};
+  const en=panel.querySelector('#enDesk');if(en)en.onclick=()=>desk.permissions.request(['shortcuts','menu-bar']).then(st=>{perm=st;if(st.shortcuts==='granted')regKey();if(st['menu-bar']==='granted'){trayOn=true;updateBadge(true)}renderPanel()}).catch(()=>toast('İzin istenemedi'));
+  const mg=panel.querySelector('#mgDesk');if(mg)mg.onclick=()=>desk.permissions.manage().then(initPerms).catch(()=>{});
+  const ins=panel.querySelector('#inDesk');if(ins)ins.onclick=()=>desk.install.request().then(r=>{if(r==='installed'){instState='installed';renderPanel()}}).catch(()=>{})}
+
+/* ---------- masaüstü ---------- */
+const use=n=>(window.claude&&window.claude.use)?Promise.resolve(window.claude.use(n)).catch(()=>null):Promise.resolve(null);
+function icon(size,tray){const c=document.createElement('canvas');c.width=c.height=size;const g=c.getContext('2d'),s=size/256;g.scale(s,s);
+  g.fillStyle='#00a86b';g.beginPath();tray?g.arc(128,128,124,0,7):g.roundRect(0,0,256,256,58);g.fill();
+  g.strokeStyle='#fff';g.lineWidth=tray?34:26;g.lineCap='round';g.lineJoin='round';g.beginPath();g.moveTo(72,134);g.lineTo(112,174);g.lineTo(188,92);g.stroke();
+  if(!tray){g.fillStyle='rgba(255,255,255,.28)';g.beginPath();g.roundRect(64,206,128,10,5);g.fill()}return c.toDataURL('image/png')}
+let trayIcon=null;
+function regKey(){desk.globalShortcut.register('CmdOrCtrl+Shift+D',()=>{desk.window.show().catch(()=>{});setView('bugun');setTimeout(()=>$('#inp').focus(),80)}).then(ok=>{keyOn=ok;renderPanel()}).catch(()=>{})}
+function updateBadge(force){if(!dock&&!trayOn)return;const n=day(keyOf(0)).tasks.filter(t=>!t.done).length,s=n?String(n):'';if(s===lastBadge&&!force)return;lastBadge=s;
+  dock?.setBadge(s).catch(()=>{});
+  if(trayOn){trayIcon=trayIcon||icon(36,true);desk.tray.set({icon:trayIcon,iconIsTemplate:false,title:s,toolTip:n?`Bugün ${n} iş kaldı`:'Bugünün işleri tamam',
+    menu:[{label:n?`Bugün ${n} iş kaldı`:'Bugünün işleri tamam',enabled:false},{type:'separator'},{label:'Uygulamayı aç',click:()=>desk.window.show().catch(()=>{})}]}).catch(()=>{trayOn=false})}}
+async function initPerms(){try{perm=await desk.permissions.state()}catch(e){perm=null}
+  if(perm){if(perm.shortcuts==='granted'&&!keyOn)regKey();if(perm['menu-bar']==='granted'&&!trayOn){trayOn=true;updateBadge(true)}}renderPanel()}
+(async()=>{desk=await use('desktop');if(!desk)return;
+  if(desk.app&&desk.app.dock){dock=desk.app.dock;dock.setIcon(icon(256,false)).catch(()=>{});updateBadge(true)}
+  if(desk.permissions)initPerms();else if(desk.install){instState=await desk.install.state().catch(()=>'unavailable');renderPanel()}})();
+
+/* ---------- kalıcı kayıt ---------- */
+(async()=>{const [db,user]=await Promise.all([use('db'),use('user')]);
+  const uid=user&&user.id?await Promise.resolve(user.id()).catch(()=>null):null;
+  if(!(db&&uid)){status('local');ready=true;render();return}
+  col=db.collection('data/users/'+uid);status('loading');
+  let tm=setTimeout(()=>{status('offline');tm=null},10000);
+  const settle=()=>{if(readyD&&readyS&&!ready){ready=true;if(tm){clearTimeout(tm);tm=null}if(!dirty.size&&!inflight.size)status('ok');render()}};
+  col.orderBy('d','desc').limit(150).onSnapshot(s=>{
+    for(const doc of s.docs){const k=doc.id;if(!/^\d{4}-\d\d-\d\d$/.test(k)||dirty.has(k)||inflight.has(k))continue;const v=doc.data();if(v)days[k]=norm(v,k)}
+    cache();if(!s.metadata.fromCache)readyD=true;settle();render()},()=>{readyD=true;settle();status('error')});
+  col.doc('settings').onSnapshot(s=>{if(!dirty.has('settings')&&!inflight.has('settings')&&s.exists){settings=normS(s.data());cache()}if(!s.metadata.fromCache)readyS=true;settle();render();renderPanel()},()=>{readyS=true;settle()})})();
+
+let curToday=keyOf(0);setInterval(()=>{if(keyOf(0)!==curToday){curToday=keyOf(0);render()}},60000);
+render();
+}
+</script>
+</body>
+</html>
