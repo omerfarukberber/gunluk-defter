@@ -23,7 +23,7 @@
 </script>
 <style>
 /* Sade, sakin, düzenli. Boşluk ve hizalama işi yapar; kenarlık ve gölge yalnızca gerektiğinde.
-   Vurgu (zümrüt) yalnızca tik, ilerleme çubuğu ve "Sıradaki" işaretinde. Devreden işler için pembe blok. */
+   Vurgu logodan gelir (açıkta lacivert, koyuda nane yeşili) ve yalnızca tik, ilerleme çubuğu ve "Sıradaki" işaretinde. Devreden işler için pembe blok. */
 @font-face{font-family:Inter;font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/inter-latin-ext.woff2) format("woff2");
   unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 @font-face{font-family:Inter;font-style:normal;font-weight:100 900;font-display:swap;src:url(fonts/inter-latin.woff2) format("woff2");
@@ -39,9 +39,10 @@
 --ink:light-dark(#18191b,#ededef);
 --muted:light-dark(#6b6d73,#a1a3a9);
 --faint:light-dark(#9a9ca3,#6f7178);
---acc:light-dark(#00a86b,#2ec98b);
---accSoft:light-dark(#e6f6ef,#1b2f26);
---onAcc:light-dark(#ffffff,#0e1a14);
+/* vurgu = logo renkleri: açık temada lacivert zemin + nane tik, koyu temada tersi */
+--acc:light-dark(#0b4f6c,#80f7ae);
+--onAcc:light-dark(#80f7ae,#032843);
+--accInv:light-dark(#80f7ae,#0b4f6c);
 --pink:light-dark(#ffe3ea,#3a2830);
 --pinkInk:light-dark(#7a2440,#ffccd8);
 --imp:light-dark(#e5484d,#ff6b70);
@@ -216,7 +217,7 @@ footer button:hover{color:var(--ink)}
 .fprog{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);width:min(320px,calc(100vw - 48px))}
 .toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,16px);opacity:0;pointer-events:none;background:var(--ink);color:var(--bg);border-radius:12px;padding:4px 4px 4px 16px;display:flex;gap:8px;align-items:center;min-height:48px;max-width:calc(100vw - 32px);box-shadow:0 10px 30px var(--shade);transition:.2s;font-weight:500;font-size:14px;z-index:30}
 .toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
-.toast button{color:var(--acc);font-weight:600;min-height:40px;padding:0 12px;border-radius:9px}
+.toast button{color:var(--accInv);font-weight:600;min-height:40px;padding:0 12px;border-radius:9px}
 
 @media(max-width:600px){.hday summary{grid-template-columns:minmax(0,1fr) auto}.hb{display:none}.kpi{padding:12px}.spark{gap:3px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
