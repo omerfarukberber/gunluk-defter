@@ -16,6 +16,8 @@ Günlük işleri planlamak ve takip etmek için sade bir planlayıcı. Kâğıt 
 - **Planı kopyala:** günün listesini metin olarak panoya kopyalar
 - **Silmeyi geri alma**
 - **Açık / koyu tema** (sistem ayarına göre)
+- **Kurulabilir uygulama (PWA):** tarayıcıdan "Uygulamayı yükle" ile kurulur, internet yokken de açılır
+- **Yedekleme:** Ayarlar > Yedek bölümünden tüm veriyi JSON olarak dışa aktar, başka cihazda içe aktar
 - **Masaüstü (Claude uygulaması):** `Ctrl+Shift+D` global kısayolu, tepside kalan iş sayısı
 
 ## Klavye kısayolları
@@ -32,15 +34,41 @@ Günlük işleri planlamak ve takip etmek için sade bir planlayıcı. Kâğıt 
 | `R` | Rutin yap |
 | `Delete` | Sil |
 
-## Çalıştırma
+## Kullanma
 
-Tek dosyalık bir uygulamadır, kurulum gerektirmez. `index.html` dosyasını tarayıcıda açman yeterli.
+**Adres:** https://omerfarukberber.github.io/gunluk-defter/
 
-Veriler nerede saklanır:
+Bilgisayara ya da telefona kurmak için:
 
+- **Chrome / Edge (Windows, Android):** adres çubuğundaki "Uygulamayı yükle" simgesine ya da menüdeki **Uygulamayı yükle** seçeneğine tıkla.
+- **Safari (iPhone, iPad):** Paylaş > **Ana Ekrana Ekle**.
+
+Kurduktan sonra kendi penceresinde açılır ve internet olmadan da çalışır.
+
+## Veriler nerede saklanır
+
+- **Web / kurulu sürüm:** yalnızca o tarayıcının yerel hafızası (`localStorage`). Sunucuya hiçbir şey gönderilmez. Tarayıcı verisini temizlersen kaybolur, bu yüzden ara sıra **Ayarlar > Yedek > Dışa aktar** ile yedek al.
 - **Claude artifact sürümü:** Claude hesabına bağlı, sadece sana özel bulut kaydı.
-- **Dosyayı doğrudan açınca:** tarayıcının yerel hafızası (`localStorage`). Tarayıcı verisini temizlersen kaybolur.
+
+Bir cihazdan diğerine geçmek için eski cihazda **Dışa aktar**, yenisinde **İçe aktar**. Yedekteki günler aynı tarihli günlerin yerine geçer, diğer günler korunur; yanlışlıkla yüklersen bildirimdeki **Geri al**'a bas.
+
+## Geliştirme
+
+Derleme adımı yok. Service worker yalnızca `http(s)` üzerinden çalıştığı için yerel bir sunucuyla aç:
+
+```
+python -m http.server 8765
+```
+
+Sonra http://localhost:8765 adresine git. Yayındaki dosyalardan birini değiştirdiğinde `sw.js` içindeki `SURUM` değerini artır; kurulu uygulamalar eski önbelleği bırakıp yenisini alır.
 
 ## Teknoloji
 
-Saf HTML, CSS ve JavaScript. Çerçeve ya da derleme adımı yok.
+Saf HTML, CSS ve JavaScript. Çerçeve ya da derleme adımı yok. GitHub Pages üzerinden yayınlanır.
+
+| Dosya | İşlevi |
+| --- | --- |
+| `index.html` | Uygulamanın tamamı |
+| `manifest.webmanifest` | Kurulabilir uygulama bilgileri (ad, ikon, renk) |
+| `sw.js` | Çevrimdışı çalışma için önbellek |
+| `icons/` | Uygulama ikonları |

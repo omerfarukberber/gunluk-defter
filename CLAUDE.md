@@ -8,7 +8,11 @@
 - Saati gelen iş için bildirim istenmedi, ekleme.
 
 ## Yapı
-- Tek dosya: `index.html` (HTML + CSS + JS, çerçeve yok, derleme adımı yok).
+- Uygulama tek dosya: `index.html` (HTML + CSS + JS, çerçeve yok, derleme adımı yok).
+- PWA dosyaları: `manifest.webmanifest`, `sw.js`, `icons/`. Yollar göreli olmalı (GitHub Pages `/gunluk-defter/` alt dizininde çalışıyor).
+- `sw.js` değişen bir dosyayı yayınlarken `SURUM`'u artır. Sayfa için önce ağ, diğer dosyalar için önce önbellek kullanılır.
+- Service worker yalnızca `http(s)` üzerinde ve Claude çerçevesinin dışında kaydedilir.
+- Yerel deneme: `python -m http.server 8765` (`.claude/launch.json` içinde `defter` olarak tanımlı).
 - Yazı tipi: Schibsted Grotesk (Google Fonts). Renkler `:root` içindeki CSS değişkenlerinde, açık/koyu tema `light-dark()` ile.
 - Tasarım dili: beyaz zemin, siyah metin, tek vurgu rengi zümrüt (#00a86b), devreden işler için pembe blok (#ffd6e0). Defter/kâğıt görünümü istenmedi; sade, modern, profesyonel.
 
@@ -22,11 +26,16 @@
 - Claude artifact içinde çalışırken `window.claude.use("db")` ve `use("user")` ile `data/users/<uid>/` koleksiyonuna da yazar. Bu API Claude dışında yoktur; kod bunu kontrol eder ve yalnızca localStorage ile çalışır.
 - `use("desktop")`: Claude masaüstü uygulamasında kurulu sürümde global kısayol (Ctrl+Shift+D), tepsi simgesi ve Dock rozeti. Claude dışında çalışmaz.
 
+## Yedek (JSON)
+- Ayarlar > Yedek. Dosya biçimi: `{ uygulama: "gunluk-defter", surum: 1, tarih, days, settings }`.
+- İçe aktarmada yedekteki günler aynı anahtarlı günlerin yerine geçer, diğerleri korunur; rutinler değiştirilir. Bildirimdeki "Geri al" eski hâle döndürür. Yalnızca `days` nesnesi (localStorage biçimi) de kabul edilir.
+
 ## Yayın durumu
-- Şu an kullanılan sürüm Claude'da yayınlanan artifact (claude.ai). Buradaki değişiklikler oraya otomatik gitmez.
+- Depo: https://github.com/omerfarukberber/gunluk-defter (public). `main` dalına push'lanan her şey GitHub Pages'te yayınlanır: https://omerfarukberber.github.io/gunluk-defter/
+- Claude'da yayınlanan artifact (claude.ai) ayrı bir kopya; buradaki değişiklikler oraya otomatik gitmez. Artifact verisi Claude hesabında, Pages sürümünün verisi tarayıcıda; aralarında taşımak için JSON yedeği kullanılır.
 
 ## Yol haritası (önerilen)
-1. GitHub deposu ve ilk commit.
-2. Claude'dan bağımsız sürüm: PWA (manifest + service worker), GitHub Pages ile yayın. Herkes tarayıcıdan "Uygulamayı yükle" ile kurabilsin.
-3. Veriyi taşımak için JSON dışa/içe aktarma.
+1. ~~GitHub deposu ve ilk commit.~~ Tamam.
+2. ~~PWA (manifest + service worker), GitHub Pages ile yayın.~~ Tamam.
+3. ~~JSON dışa/içe aktarma.~~ Tamam.
 4. İstenirse Tauri ile Windows kurulum dosyası (.exe) ve GitHub Releases.
