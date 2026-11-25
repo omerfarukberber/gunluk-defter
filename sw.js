@@ -1,6 +1,6 @@
 /* Günlük Defter service worker: uygulamayı çevrimdışı açılabilir yapar.
    Bir dosyayı değiştirip yayınladığında SURUM'u artır; eski önbellek silinir. */
-const SURUM = 'v2';
+const SURUM = 'v3';
 const KABUK = 'defter-kabuk-' + SURUM;
 const DOSYALAR = [
   './',

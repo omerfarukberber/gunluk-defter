@@ -226,7 +226,7 @@ footer button:hover{color:var(--ink)}
 <div class="app">
   <header>
     <div class="bar">
-      <div class="brand"><svg viewBox="0 0 256 256" aria-hidden="true"><rect width="256" height="256" rx="58" fill="#00a86b"/><path d="M72 134l40 40 76-82" fill="none" stroke="#fff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/></svg>Günlük Defter</div>
+      <div class="brand"><svg aria-hidden="true" viewBox="60 70 1130 1130"><defs><linearGradient id="gdBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#075170"/><stop offset="1" stop-color="#032843"/></linearGradient></defs><rect x="60" y="70" width="1130" height="1130" rx="250" fill="url(#gdBg)"/><path fill="#f5f0e3" d="M914 381A395 395 0 1 0 727 1032Q862 1010 925 940V737H787V840A250 250 0 1 1 815 487Z"/><path fill="#80f7ae" d="M567 667H661L716 714L933 508H1028V557L770 797Q758 810 742 810H680Q668 810 660 802Q590 740 567 667Z"/></svg>Günlük Defter</div>
       <div class="tools">
         <button class="ib" id="focusBtn" title="Odak modu (F)" aria-label="Odak modu"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></button>
         <button class="ib" id="copyBtn" title="Planı panoya kopyala" aria-label="Planı kopyala"><svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></button>
@@ -560,10 +560,12 @@ ${pendingImport?`<div class="confirm" role="alertdialog" aria-labelledby="cfT"><
 
 /* ---------- masaüstü ---------- */
 const use=n=>(window.claude&&window.claude.use)?Promise.resolve(window.claude.use(n)).catch(()=>null):Promise.resolve(null);
-function icon(size,tray){const c=document.createElement('canvas');c.width=c.height=size;const g=c.getContext('2d'),s=size/256;g.scale(s,s);
-  g.fillStyle='#00a86b';g.beginPath();tray?g.arc(128,128,124,0,7):g.roundRect(0,0,256,256,58);g.fill();
-  g.strokeStyle='#fff';g.lineWidth=tray?34:26;g.lineCap='round';g.lineJoin='round';g.beginPath();g.moveTo(72,134);g.lineTo(112,174);g.lineTo(188,92);g.stroke();
-  if(!tray){g.fillStyle='rgba(255,255,255,.28)';g.beginPath();g.roundRect(64,206,128,10,5);g.fill()}return c.toDataURL('image/png')}
+/* Logo (logo.svg ile aynı çizim): Claude masaüstünde Dock ve tepsi simgesi için tuvale çizilir */
+const LOGO_G='M914 381A395 395 0 1 0 727 1032Q862 1010 925 940V737H787V840A250 250 0 1 1 815 487Z',LOGO_C='M567 667H661L716 714L933 508H1028V557L770 797Q758 810 742 810H680Q668 810 660 802Q590 740 567 667Z';
+function icon(size,tray){const c=document.createElement('canvas');c.width=c.height=size;const g=c.getContext('2d'),s=size/1130;g.scale(s,s);g.translate(-60,-70);
+  const bg=g.createLinearGradient(60,70,1190,1200);bg.addColorStop(0,'#075170');bg.addColorStop(1,'#032843');g.fillStyle=bg;
+  g.beginPath();tray?g.arc(625,635,565,0,7):g.roundRect(60,70,1130,1130,250);g.fill();
+  g.fillStyle='#f5f0e3';g.fill(new Path2D(LOGO_G));g.fillStyle='#80f7ae';g.fill(new Path2D(LOGO_C));return c.toDataURL('image/png')}
 let trayIcon=null;
 function regKey(){desk.globalShortcut.register('CmdOrCtrl+Shift+D',()=>{desk.window.show().catch(()=>{});setView('bugun');setTimeout(()=>$('#inp').focus(),80)}).then(ok=>{keyOn=ok;renderPanel()}).catch(()=>{})}
 function updateBadge(force){if(!dock&&!trayOn)return;const n=day(keyOf(0)).tasks.filter(t=>!t.done).length,s=n?String(n):'';if(s===lastBadge&&!force)return;lastBadge=s;

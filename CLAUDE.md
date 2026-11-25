@@ -10,10 +10,10 @@
 ## Yapı
 - Uygulama tek dosya: `index.html` (HTML + CSS + JS, çerçeve yok, derleme adımı yok).
 - PWA dosyaları: `manifest.webmanifest`, `sw.js`, `logo.svg`, `icons/`, `fonts/`. Yollar göreli olmalı (GitHub Pages `/gunluk-defter/` alt dizininde çalışıyor).
-- `sw.js` değişen bir dosyayı yayınlarken `SURUM`'u artır (şu an `v2`); yeni bir dosya eklersen `DOSYALAR` listesine de ekle. Sayfa için önce ağ, diğer dosyalar için önce önbellek kullanılır.
+- `sw.js` değişen bir dosyayı yayınlarken `SURUM`'u artır (şu an `v3`); yeni bir dosya eklersen `DOSYALAR` listesine de ekle. Sayfa için önce ağ, diğer dosyalar için önce önbellek kullanılır.
 - Service worker yalnızca `http(s)` üzerinde ve Claude çerçevesinin dışında kaydedilir.
 - Yerel deneme: `python -m http.server 8765` (`.claude/launch.json` içinde `defter` olarak tanımlı).
-- Logo: `logo.svg` (yuvarlatılmış zümrüt kare içinde beyaz tik; süs, gradyan, gölge yok). Başlıkta satır içi SVG olarak da var. `icons/` içindeki PNG'ler (favicon-32, 192, 512, maskable, apple-touch) bundan üretildi; logo değişirse hepsini yeniden üret.
+- Logo: `logo.svg`. Lacivert yuvarlatılmış kare (hafif çapraz gradyan #075170 → #032843), krem renkli büyük "G" (#f5f0e3) ve G'nin içinden çıkan nane yeşili tik (#80f7ae). Ömer'in verdiği görselden SVG olarak yeniden çizildi. Başlıkta satır içi SVG olarak, `index.html` içindeki `icon()` fonksiyonunda (Claude masaüstü Dock/tepsi) aynı yol verileriyle (`LOGO_G`, `LOGO_C`) kullanılır; logo değişirse üçünü birlikte güncelle. `icons/` içindeki PNG'ler (favicon-32, 192, 512, maskable, apple-touch) logo.svg'den headless Chrome ile üretildi.
 - Yazı tipi: Inter variable, `fonts/` içinden yerel yüklenir (latin + latin-ext; Türkçe harfler latin-ext'te). Google Fonts ya da başka dış kaynak kullanma. Rakamlar `tabular-nums`.
 - Tipografi: tarih başlığı 30-40px kalın, işler 16px, yardımcı metinler 13-14px.
 - Tasarım dili: Linear / Things gibi sakin ve düzenli. Düzeni boşluk ve hizalama kurar; iş satırlarında çizgi yok, gölge yalnızca panel, bildirim ve sürüklemede. Vurgu rengi zümrüt (#00a86b) yalnızca tik, ilerleme çubuğu ve "Sıradaki" işaretinde. Önemli işareti kırmızı nokta (`--imp`), devreden işler pembe blok (`--pink`), arama eşleşmesi sarı (`--mark`).
