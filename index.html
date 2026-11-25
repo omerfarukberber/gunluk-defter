@@ -275,11 +275,12 @@ function renderHist(today){
     if(days[k].note){const p=document.createElement('p');p.className='hnote';p.textContent=days[k].note;el.appendChild(p)}hl.appendChild(el)})}
 
 /* ---------- işlemler ---------- */
-let lastDel=null,toastT=null;
-function toast(msg,undo){$('#toastt').textContent=msg;$('#undo').hidden=!undo;$('#toast').classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>$('#toast').classList.remove('on'),undo?6000:2500)}
+let undoFn=null,toastT=null;
+function toast(msg,undo){$('#toastt').textContent=msg;undoFn=undo||null;$('#undo').hidden=!undo;$('#toast').classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>$('#toast').classList.remove('on'),undo?6000:2500)}
 const focusRow=i=>{const r=$('#list').children;if(!r.length)return $('#inp').focus();r[Math.max(0,Math.min(i,r.length-1))].focus()};
 function toggle(id){const f=find(id);if(!f.t)return;f.t.done=!f.t.done;save(f.k);render()}
-function del(id){const f=find(id);if(!f.t)return;f.ts.splice(f.i,1);lastDel={k:f.k,t:f.t,i:f.i};save(f.k);render();toast('İş silindi',true);return f.i}
+function del(id){const f=find(id);if(!f.t)return;f.ts.splice(f.i,1);save(f.k);render();
+  const{k,t,i}=f;toast('İş silindi',()=>{const ts=day(k).tasks;ts.splice(Math.min(i,ts.length),0,t);save(k);render()});return f.i}
 function moveDay(id){const f=find(id);if(!f.t)return;const to=view==='yarin'?keyOf(0):keyOf(1);if(view==='bugun')applyRoutines(to);f.ts.splice(f.i,1);day(to).tasks.push({...f.t,done:false});save(f.k,to);render();toast(view==='yarin'?'Bugüne alındı':'Yarına ertelendi');return f.i}
 function toggleRoutine(id){const f=find(id);if(!f.t)return;
   if(f.t.routine){settings.routines=settings.routines.filter(r=>r.id!==f.t.routine);f.t.routine='';toast('Rutinden çıkarıldı')}
@@ -298,12 +299,28 @@ function copyPlan(){const k=viewKey(),d=view==='yarin'?dateOf(1):dateOf(0),D=day
   const txt=[fmtDay(d)+' '+fmtW(d),'',...D.tasks.map(t=>(t.done?'[x] ':'[ ] ')+(t.time?t.time+' ':'')+t.text),...(D.note?['','Not: '+D.note]:[])].join('\n');
   navigator.clipboard.writeText(txt).then(()=>toast('Plan panoya kopyalandı'),()=>toast('Kopyalanamadı'))}
 
+/* ---------- yedek: JSON dışa / içe aktarma ---------- */
+function exportData(){
+  const data={uygulama:'gunluk-defter',surum:1,tarih:new Date().toISOString(),days,settings};
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download='gunluk-defter-yedek-'+keyOf(0)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  toast('Yedek indirildi')}
+function importData(file){file.text().then(txt=>{
+  const o=JSON.parse(txt);if(!o||typeof o!=='object')throw 0;
+  const src=o.days&&typeof o.days==='object'?o.days:o,ks=Object.keys(src).filter(k=>/^\d{4}-\d\d-\d\d$/.test(k)),hasS=!!(o.settings&&typeof o.settings==='object');
+  if(!ks.length&&!hasS)throw 0;
+  const prevD={},prevS=clone(settings);for(const k of ks)prevD[k]=days[k]?clone(days[k]):null;
+  for(const k of ks)days[k]=norm(src[k],k);if(hasS)settings=normS(o.settings);
+  const keys=[...ks,...(hasS?['settings']:[])];save(...keys);render();renderPanel();
+  toast(ks.length+' gün'+(hasS?' ve rutinler':'')+' geri yüklendi',()=>{for(const k of ks)days[k]=norm(prevD[k],k);settings=prevS;save(...keys);render();renderPanel()})
+}).catch(()=>toast('Bu dosya geçerli bir yedek değil'))}
+
 /* ---------- olaylar ---------- */
 const setView=v=>{if(editing)return;view=v;render()};
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.v)});
 $('#add').addEventListener('submit',e=>{e.preventDefault();const p=parse($('#inp').value);if(!p.text)return;const k=viewKey();day(k).tasks.push({id:rid(),text:p.text,time:p.time,done:false,moved:false,routine:''});$('#inp').value='';save(k);render()});
 $('#inp').addEventListener('keydown',e=>{if(e.key==='ArrowUp'&&!e.target.value){e.preventDefault();focusRow(1e9)}else if(e.key==='Escape')e.target.blur()});
-$('#undo').onclick=()=>{if(!lastDel)return;const{k,t,i}=lastDel,ts=day(k).tasks;ts.splice(Math.min(i,ts.length),0,t);lastDel=null;save(k);render();$('#toast').classList.remove('on')};
+$('#undo').onclick=()=>{const f=undoFn;undoFn=null;$('#toast').classList.remove('on');if(f)f()};
 $('#list').addEventListener('click',e=>{const li=e.target.closest('.task');if(!li||editing)return;const id=li.dataset.id;
   if(e.target.closest('.chk'))toggle(id);else if(e.target.closest('.del'))del(id);else if(e.target.closest('.mv'))moveDay(id);else if(e.target.closest('.rt'))toggleRoutine(id)});
 $('#list').addEventListener('dblclick',e=>{const b=e.target.closest('.body');if(b)startEdit(b.closest('.task').dataset.id)});
@@ -346,6 +363,8 @@ function renderPanel(){if(panel.hidden)return;
   panel.innerHTML=`<div class="phead"><h2>Ayarlar</h2><button class="ib" id="pClose" aria-label="Kapat">${IC.del}</button></div>
 <h3>Rutinler</h3><p>Her güne otomatik eklenen işler. Bir işin üzerindeki tekrar simgesiyle de ekleyebilirsin.</p><ul class="rlist" id="rl"></ul>
 <form class="radd" id="rAdd"><input id="rInp" maxlength="200" placeholder="örn. 08:00 Spor" aria-label="Yeni rutin"><button class="btn">Ekle</button></form>
+<h3>Yedek</h3><p>Tüm günleri ve rutinleri bir JSON dosyasına kaydet, başka bir cihazda ya da tarayıcıda geri yükle. Yedekteki günler aynı tarihli günlerin yerine geçer.</p>
+<div class="radd"><button class="btn" id="exp">Dışa aktar</button><button class="btn sec" id="imp">İçe aktar</button><input type="file" id="impF" accept=".json,application/json" hidden></div>
 <h3>Masaüstü</h3>${dk}
 <h3 id="keysH">Klavye kısayolları</h3><div class="keys">
 <kbd>/</kbd><span>Yeni iş yaz</span><kbd>1 2 3</kbd><span>Bugün, Yarın, Geçmiş</span><kbd>↑ ↓</kbd><span>İşler arasında gez</span>
@@ -355,6 +374,8 @@ function renderPanel(){if(panel.hidden)return;
   for(const r of settings.routines){const li=document.createElement('li'),s=document.createElement('span');s.textContent=(r.time?r.time+'  ':'')+r.text;const b=document.createElement('button');b.innerHTML=IC.del;b.title='Rutini kaldır';b.setAttribute('aria-label','Rutini kaldır');
     b.onclick=()=>{settings.routines=settings.routines.filter(x=>x.id!==r.id);for(const k of [keyOf(0),keyOf(1)])days[k]?.tasks.forEach(t=>{if(t.routine===r.id){t.routine='';save(k)}});save('settings');render();renderPanel()};li.append(s,b);rl.appendChild(li)}
   panel.querySelector('#pClose').onclick=()=>openPanel(false);
+  const fi=panel.querySelector('#impF');panel.querySelector('#exp').onclick=exportData;panel.querySelector('#imp').onclick=()=>fi.click();
+  fi.onchange=()=>{if(fi.files[0])importData(fi.files[0]);fi.value=''};
   panel.querySelector('#rAdd').onsubmit=e=>{e.preventDefault();const p=parse(panel.querySelector('#rInp').value);if(!p.text)return;const r={id:rid(),text:p.text,time:p.time};settings.routines.push(r);
     for(const k of [keyOf(0),keyOf(1)]){const d=days[k];if(d&&d.ra){d.tasks.unshift({id:rid(),text:r.text,time:r.time,done:false,moved:false,routine:r.id});save(k)}}save('settings');render();renderPanel();panel.querySelector('#rInp').focus()};
   const en=panel.querySelector('#enDesk');if(en)en.onclick=()=>desk.permissions.request(['shortcuts','menu-bar']).then(st=>{perm=st;if(st.shortcuts==='granted')regKey();if(st['menu-bar']==='granted'){trayOn=true;updateBadge(true)}renderPanel()}).catch(()=>toast('İzin istenemedi'));
