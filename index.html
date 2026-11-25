@@ -110,8 +110,9 @@ h1{font-weight:700;font-size:clamp(30px,8vw,40px);line-height:1.1;letter-spacing
 .done .chk span{background:var(--acc);border-color:var(--acc)}.done .chk svg{stroke-dashoffset:0}
 .body{padding:12px 8px 12px 4px;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;cursor:text;overflow-wrap:anywhere}
 .tm{font-size:13px;font-weight:500;color:var(--muted);white-space:nowrap}
-.tx{font-size:16px;font-weight:450;transition:color .2s}
-.done .tx{color:var(--faint);text-decoration:line-through;text-decoration-thickness:1px}
+/* üstü çizgi soldan sağa çizilir */
+.tx{font-size:16px;font-weight:450;background:linear-gradient(currentColor,currentColor) no-repeat 0 58%/0 1px;transition:color .25s,background-size .32s var(--ease)}
+.done .tx{color:var(--faint);background-size:100% 1px}
 .done .tm{color:var(--faint)}
 .impd{width:8px;height:8px;border-radius:50%;background:var(--imp);align-self:center;flex:none;margin-right:-2px}
 .done .impd{opacity:.4}
@@ -220,10 +221,59 @@ footer button:hover{color:var(--ink)}
 .toast button{color:var(--accInv);font-weight:600;min-height:40px;padding:0 12px;border-radius:9px}
 
 @media(max-width:600px){.hday summary{grid-template-columns:minmax(0,1fr) auto}.hb{display:none}.kpi{padding:12px}.spark{gap:3px}}
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ---------- hareket: kısa, yumuşak, işlevsel. "Hareketi azalt" açıksa hiçbiri çalışmaz ---------- */
+:root{--ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.34,1.45,.55,1)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+@keyframes fade{from{opacity:0}}
+@keyframes logoIn{from{opacity:0;transform:scale(.55) rotate(-10deg)}}
+@keyframes checkIn{from{opacity:0;transform:translate(-35%,25%) scale(.6)}}
+@keyframes tagIn{from{opacity:0;transform:translateX(-4px)}}
+@keyframes panelIn{from{opacity:0;transform:translateX(18px)}}
+@keyframes grow{from{transform:scaleY(0)}}
+@keyframes openDown{from{opacity:0;transform:translateY(-4px)}}
+@keyframes sheen{from{background-position:-60% 0}to{background-position:160% 0}}
+/* açılış */
+.intro .brand{animation:rise .5s var(--ease) both}
+.intro .brand svg{animation:logoIn .7s var(--spring) both}
+.intro .brand svg path:last-of-type{transform-box:fill-box;transform-origin:0 100%;animation:checkIn .5s .32s var(--ease) both}
+.intro .tools{animation:fade .6s .25s both}
+.intro h1{animation:rise .55s .06s var(--ease) both}
+.intro .wday{animation:rise .55s .12s var(--ease) both}
+.intro .tabs{animation:rise .55s .18s var(--ease) both}
+.intro .prog,.intro .kpis{animation:rise .55s .24s var(--ease) both}
+.intro .carry{animation:rise .55s .28s var(--ease) both}
+.intro .task{animation:rise .5s calc(.3s + var(--i,0) * 45ms) var(--ease) both}
+.intro .add,.intro .notewrap,.intro footer{animation:rise .55s .5s var(--ease) both}
+/* hover, basma */
+.task{transition:background-color .15s}
+.ib,.lnk,.tabs button,.acts button,footer button,.rlist button{transition:background-color .15s,color .15s,transform .12s var(--ease)}
+.ib:active,.acts button:active,.rlist button:active{transform:scale(.9)}
+.btn{transition:opacity .15s,transform .12s var(--ease)}.btn:active{transform:scale(.96)}
+.chk span{transition:background-color .2s,border-color .2s,transform .2s var(--spring)}
+.chk:hover span{transform:scale(1.08)}
+.add>svg{transition:transform .3s var(--ease),color .15s}.add:focus-within>svg{transform:rotate(90deg)}
+.tag{animation:tagIn .3s var(--ease)}
+/* sekme göstergesi */
+.tabs{position:relative}
+.tabs .ind{position:absolute;top:3px;bottom:3px;left:0;width:0;border-radius:9px;background:var(--seg);box-shadow:0 1px 2px var(--shade);transition:transform .32s var(--ease),width .32s var(--ease)}
+.tabs button{position:relative;z-index:1}
+.tabs button[aria-selected=true]{background:none;box-shadow:none}
+/* silinen ya da taşınan işin kaybolan kopyası */
+#dayView{position:relative}
+.ghosts{position:absolute;inset:0;pointer-events:none;z-index:3}
+.ghosts .task{position:absolute;margin:0}
+/* ilerleme parıltısı (günün son işi bitince) */
+.meter i.shine{background-image:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);background-size:40% 100%;background-repeat:no-repeat;animation:sheen 1.1s .25s ease-out both}
+/* panel, odak, geçmiş */
+.panel:not([hidden]){animation:panelIn .28s var(--ease)}
+.focus:not([hidden]){animation:fade .22s ease}
+.hday[open] ul,.hday[open] .hnote{animation:openDown .25s var(--ease)}
+.spark.anim i{transform-origin:50% 100%;animation:grow .55s calc(var(--i,0) * 25ms) var(--ease) both}
+.toast{transition:opacity .2s,transform .35s var(--spring)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
 </head>
-<body>
+<body class="intro">
 <div class="app">
   <header>
     <div class="bar">
@@ -237,7 +287,7 @@ footer button:hover{color:var(--ink)}
     </div>
     <div class="head">
       <h1 id="date">Bugün</h1><p class="wday" id="wday"></p>
-      <nav class="tabs" role="tablist" aria-label="Görünüm">
+      <nav class="tabs" role="tablist" aria-label="Görünüm"><span class="ind" aria-hidden="true"></span>
         <button role="tab" data-v="bugun" aria-selected="true">Bugün</button>
         <button role="tab" data-v="yarin" aria-selected="false">Yarın</button>
         <button role="tab" data-v="gecmis" aria-selected="false">Geçmiş</button>
@@ -247,6 +297,7 @@ footer button:hover{color:var(--ink)}
   <div class="prog" id="prog"><span id="progt"></span><div class="meter"><i id="progb" style="width:0"></i></div><button class="lnk" id="hideBtn" hidden>Yapılanları gizle</button></div>
   <div class="carry" id="carry" hidden></div>
   <section id="dayView">
+    <div class="ghosts" id="ghosts" aria-hidden="true"></div>
     <ul class="list" id="list" aria-label="İşler"></ul>
     <p class="hidnote" id="hidNote" hidden><span></span><button class="lnk" id="showBtn">Göster</button></p>
     <p class="empty" id="empty" hidden></p>
@@ -328,6 +379,7 @@ function rowEl(id){let li=rows.get(id);if(li)return li;li=document.createElement
   li.innerHTML=`<button class="chk" tabindex="-1"><span><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></button><div class="body"><span class="impd" title="Önemli"></span><span class="tm"></span><span class="tx"></span><span class="rti" title="Her gün tekrarlanan iş">${IC.rt}</span><span class="tag">Sıradaki</span></div><div class="acts"><button class="ed" tabindex="-1" title="Düzenle" aria-label="Düzenle">${IC.ed}</button><button class="imp" tabindex="-1">${IC.imp}</button><button class="rt" tabindex="-1"></button><button class="mv" tabindex="-1"></button><button class="del" tabindex="-1" title="Sil (Delete)" aria-label="Sil">${IC.del}</button><span class="grip" title="Sürükleyerek sırala">${IC.grip}</span></div>`;
   li.querySelector('.rt').innerHTML=IC.rt;rows.set(id,li);return li}
 function paint(li,t,isNext){const sig=[t.text,t.time,t.done,t.routine,t.important,isNext,view].join('|');if(li._s===sig)return;li._s=sig;
+  if(t.done&&li._done===false&&motion())li.querySelector('.chk span').animate([{transform:'scale(1)'},{transform:'scale(.8)',offset:.35},{transform:'scale(1.14)',offset:.7},{transform:'scale(1)'}],{duration:380,easing:'ease-out'});li._done=t.done;
   li.classList.toggle('done',t.done);li.classList.toggle('next',isNext);li.querySelector('.impd').hidden=!t.important;
   const im=li.querySelector('.imp');im.classList.toggle('on',!!t.important);im.title=t.important?'Önemli işaretini kaldır (I)':'Önemli olarak işaretle (I)';im.setAttribute('aria-label',im.title);im.setAttribute('aria-pressed',!!t.important);
   const c=li.querySelector('.chk');c.setAttribute('aria-pressed',t.done);c.setAttribute('aria-label',t.done?'Yapılmadı yap':'Yapıldı işaretle');
@@ -335,13 +387,32 @@ function paint(li,t,isNext){const sig=[t.text,t.time,t.done,t.routine,t.importan
   li.querySelector('.tag').hidden=!isNext;li.querySelector('.rti').hidden=!t.routine;
   const rt=li.querySelector('.rt');rt.classList.toggle('on',!!t.routine);rt.title=t.routine?'Rutinden çıkar (R)':'Her gün tekrarla (R)';rt.setAttribute('aria-label',rt.title);
   const mv=li.querySelector('.mv');mv.innerHTML=view==='yarin'?IC.back:IC.fwd;mv.title=view==='yarin'?'Bugüne al (T)':'Yarına ertele (T)';mv.setAttribute('aria-label',mv.title)}
-function renderList(k){const all=day(k).tasks,ts=all.filter(t=>!isHid(k,t)),first=view==='bugun'?ts.find(t=>!t.done):null,ul=$('#list'),keep=new Set();
-  ts.forEach((t,i)=>{const li=rowEl(t.id);keep.add(t.id);paint(li,t,t===first);if(ul.children[i]!==li)ul.insertBefore(li,ul.children[i]||null)});
-  for(const [id,li] of rows)if(!keep.has(id)){li.remove();rows.delete(id)}}
+/* Liste animasyonu (FLIP): kalan işler yeni yerlerine kayar, eklenen iş belirir,
+   kaldırılan işin bir kopyası (hayalet) üst katmanda kayarak kaybolur. Gün değişince animasyon yok. */
+const motion=()=>!matchMedia('(prefers-reduced-motion: reduce)').matches,EASE='cubic-bezier(.2,.8,.2,1)';
+const exitHint=new Map();let listKey=null,firstList=true;
+const EXIT={del:'translateX(-28px) scale(.98)',right:'translateX(48px)',left:'translateX(-48px)',fade:'scale(.98)'};
+function ghost(li,how){const box=$('#ghosts'),r=li.getBoundingClientRect(),b=box.getBoundingClientRect(),g=li.cloneNode(true);
+  g.removeAttribute('tabindex');g.classList.remove('sel','next');g.style.cssText=`top:${r.top-b.top}px;left:${r.left-b.left}px;width:${r.width}px`;box.appendChild(g);
+  g.animate([{opacity:1,transform:'none'},{opacity:0,transform:EXIT[how]||EXIT.fade}],{duration:how==='del'?220:260,easing:EASE}).finished.then(()=>g.remove(),()=>g.remove())}
+function renderList(k){const all=day(k).tasks,ts=all.filter(t=>!isHid(k,t)),first=view==='bugun'?ts.find(t=>!t.done):null,ul=$('#list');
+  const anim=motion()&&listKey===k&&!firstList,ids=new Set(ts.map(t=>t.id)),before=new Map();
+  if(anim)for(const [id,li] of rows)if(li.isConnected)before.set(id,li.getBoundingClientRect().top);
+  for(const [id,li] of rows)if(!ids.has(id)){if(anim&&li.isConnected)ghost(li,exitHint.get(id));li.remove();rows.delete(id)}
+  ts.forEach((t,i)=>{const isNew=!rows.has(t.id),li=rowEl(t.id);paint(li,t,t===first);if(ul.children[i]!==li)ul.insertBefore(li,ul.children[i]||null);
+    if(firstList)li.style.setProperty('--i',i);
+    else if(isNew&&anim)li.animate([{opacity:0,transform:'translateY(-8px)'},{opacity:1,transform:'none'}],{duration:280,easing:EASE})});
+  if(anim)for(const [id,top] of before){const li=rows.get(id);if(!li)continue;const d=top-li.getBoundingClientRect().top;
+    if(Math.abs(d)>1)li.animate([{transform:`translateY(${d}px)`},{transform:'none'}],{duration:260,easing:EASE})}
+  exitHint.clear();listKey=k;firstList=false}
 
+let lastAll={k:null,v:null},celebrate=false;
+function moveInd(){const b=document.querySelector('.tabs [aria-selected=true]'),ind=document.querySelector('.tabs .ind');if(!b||!ind)return;
+  const first=!ind.style.width;if(first)ind.style.transition='none';const br=b.getBoundingClientRect(),tr=b.parentNode.getBoundingClientRect();ind.style.width=br.width+'px';ind.style.transform=`translateX(${br.left-tr.left}px)`;
+  if(first){void ind.offsetWidth;ind.style.transition=''}}
 function render(){if(editing)return;
   const today=keyOf(0),hist=view==='gecmis';
-  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===view));
+  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===view));moveInd();
   $('#dayView').hidden=hist;$('#histView').hidden=!hist;$('#prog').hidden=hist;$('#copyBtn').hidden=hist;$('#focusBtn').hidden=hist;
   if(hist){$('#date').textContent='Geçmiş';$('#wday').textContent='Son günlerin özeti';$('#carry').hidden=true;renderHist(today);updateBadge();return}
   const k=viewKey();applyRoutines(k);
@@ -349,6 +420,9 @@ function render(){if(editing)return;
   $('#date').textContent=fmtDay(d);$('#wday').textContent=(view==='yarin'?'Yarın, ':'')+fmtW(d);
   $('#progt').innerHTML=view==='yarin'?(ts.length?`<b>${ts.length}</b> iş planlandı`:'Henüz plan yok'):(ts.length?`<b>${done}/${ts.length}</b> tamamlandı`:'Plan boş');
   $('#progb').style.width=(view==='bugun'&&ts.length?done/ts.length*100:0)+'%';
+  const allDone=view==='bugun'&&ts.length>0&&done===ts.length,pb=$('#progb');
+  if(allDone&&celebrate&&lastAll.k===k&&lastAll.v===false){if(motion()){pb.classList.remove('shine');void pb.offsetWidth;pb.classList.add('shine')}if(focusEl.hidden)toast('Bugünün işleri tamam')}
+  lastAll={k,v:allDone};celebrate=false;
   $('#hideBtn').hidden=view!=='bugun'||!done||!!D.hideDone;
   const hidN=ts.filter(t=>isHid(k,t)).length,hn=$('#hidNote');hn.hidden=!hidN;if(hidN)hn.querySelector('span').textContent=hidN+' yapılmış iş gizli';
   renderList(k);
@@ -367,7 +441,7 @@ function renderHist(today){
   const kp=$('#kpis');kp.innerHTML='<div class="kpi"><b></b><span>Son 7 gün tamamlama</span></div><div class="kpi"><b></b><span>Son 7 günde biten iş</span></div><div class="kpi"><b></b><span>Planlı gün serisi</span></div>';
   const bs=kp.querySelectorAll('b');bs[0].textContent=tot?'%'+Math.round(dn/tot*100):'—';bs[1].textContent=dn;bs[2].textContent=streak+' gün';
   let sp='';for(let i=13;i>=0;i--){const d=dateOf(-i),t=days[keyOfDate(d)]?.tasks||[],r=t.length?t.filter(x=>x.done).length/t.length:0;
-    sp+=`<div title="${fmtDay(d)}: ${t.length?Math.round(r*100)+'%':'plan yok'}"><i class="${t.length&&r?'':'z'}" style="height:${t.length?Math.max(r*100,4):4}%"></i><small>${d.toLocaleDateString('tr-TR',{weekday:'narrow'})}</small></div>`}
+    sp+=`<div title="${fmtDay(d)}: ${t.length?Math.round(r*100)+'%':'plan yok'}" style="--i:${13-i}"><i class="${t.length&&r?'':'z'}" style="height:${t.length?Math.max(r*100,4):4}%"></i><small>${d.toLocaleDateString('tr-TR',{weekday:'narrow'})}</small></div>`}
   $('#spark').innerHTML=sp;
   const hl=$('#hlist');hl.textContent='';
   const q=$('#hq').value.trim().toLocaleLowerCase('tr'),has=x=>!!x&&x.toLocaleLowerCase('tr').includes(q);
@@ -393,10 +467,10 @@ function renderHist(today){
 let undoFn=null,toastT=null;
 function toast(msg,undo){$('#toastt').textContent=msg;undoFn=undo||null;$('#undo').hidden=!undo;$('#toast').classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>$('#toast').classList.remove('on'),undo?6000:2500)}
 const focusRow=i=>{const r=$('#list').children;if(!r.length)return $('#inp').focus();r[Math.max(0,Math.min(i,r.length-1))].focus()};
-function toggle(id){const f=find(id);if(!f.t)return;f.t.done=!f.t.done;save(f.k);render()}
-function del(id){const f=find(id);if(!f.t)return;f.ts.splice(f.i,1);save(f.k);render();
+function toggle(id){const f=find(id);if(!f.t)return;f.t.done=!f.t.done;celebrate=f.t.done;save(f.k);render()}
+function del(id){const f=find(id);if(!f.t)return;exitHint.set(id,'del');f.ts.splice(f.i,1);save(f.k);render();
   const{k,t,i}=f;toast('İş silindi',()=>{const ts=day(k).tasks;ts.splice(Math.min(i,ts.length),0,t);save(k);render()});return f.i}
-function moveDay(id){const f=find(id);if(!f.t)return;const to=view==='yarin'?keyOf(0):keyOf(1);if(view==='bugun')applyRoutines(to);f.ts.splice(f.i,1);day(to).tasks.push({...f.t,done:false});save(f.k,to);render();toast(view==='yarin'?'Bugüne alındı':'Yarına ertelendi');return f.i}
+function moveDay(id){const f=find(id);if(!f.t)return;const to=view==='yarin'?keyOf(0):keyOf(1);exitHint.set(id,view==='yarin'?'left':'right');if(view==='bugun')applyRoutines(to);f.ts.splice(f.i,1);day(to).tasks.push({...f.t,done:false});save(f.k,to);render();toast(view==='yarin'?'Bugüne alındı':'Yarına ertelendi');return f.i}
 function toggleImportant(id){const f=find(id);if(!f.t)return;if(f.t.important)delete f.t.important;else f.t.important=true;save(f.k);render()}
 function toggleRoutine(id){const f=find(id);if(!f.t)return;
   if(f.t.routine){settings.routines=settings.routines.filter(r=>r.id!==f.t.routine);f.t.routine='';toast('Rutinden çıkarıldı')}
@@ -453,7 +527,10 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme)
 const touch=matchMedia('(hover: none)');
 
 /* ---------- olaylar ---------- */
-const setView=v=>{if(editing)return;view=v;render()};
+const setView=v=>{if(editing)return;const ch=v!==view;view=v;render();if(!ch||!motion())return;
+  for(const el of [$('#date'),$('#wday'),view==='gecmis'?$('#histView'):$('#dayView'),...(view==='gecmis'?[]:[$('#prog')])])
+    el.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}],{duration:280,easing:EASE});
+  if(view==='gecmis'){const sp=$('#spark');sp.classList.add('anim');setTimeout(()=>sp.classList.remove('anim'),1200)}};
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.v)});
 $('#add').addEventListener('submit',e=>{e.preventDefault();const p=parse($('#inp').value);if(!p.text)return;const k=viewKey();day(k).tasks.push({id:rid(),text:p.text,time:p.time,done:false,moved:false,routine:''});$('#inp').value='';save(k);render()});
 $('#inp').addEventListener('keydown',e=>{if(e.key==='ArrowUp'&&!e.target.value){e.preventDefault();focusRow(1e9)}else if(e.key==='Escape')e.target.blur()});
@@ -504,8 +581,9 @@ const focusEl=$('#focus');let focusId=null;
 function nextOpen(fromId){const ts=day(keyOf(0)).tasks,i=ts.findIndex(t=>t.id===fromId);
   for(let j=1;j<=ts.length;j++){const x=ts[(i+j+ts.length)%ts.length];if(x&&!x.done&&x.id!==fromId)return x.id}return null}
 function openFocus(){if(editing)return;openPanel(false);if(view!=='bugun'){view='bugun';render()}
-  focusId=(day(keyOf(0)).tasks.find(t=>!t.done)||{}).id||null;focusEl.hidden=false;document.body.style.overflow='hidden';renderFocus()}
-function closeFocus(){focusEl.hidden=true;focusId=null;document.body.style.overflow='';render();$('#focusBtn').focus()}
+  focusId=(day(keyOf(0)).tasks.find(t=>!t.done)||{}).id||null;focusSig='';focusPct=0;focusEl.hidden=false;document.body.style.overflow='hidden';renderFocus()}
+function closeFocus(){focusEl.hidden=true;focusId=null;focusSig='';document.body.style.overflow='';render();$('#focusBtn').focus()}
+let focusSig='',focusDir='up',focusPct=0;
 function renderFocus(){if(focusEl.hidden)return;const ts=day(keyOf(0)).tasks,open=ts.filter(t=>!t.done),n=ts.length-open.length;
   let t=ts.find(x=>x.id===focusId&&!x.done);if(!t){t=open[0];focusId=t?t.id:null}
   const had=focusEl.contains(document.activeElement)?document.activeElement.className:'';
@@ -514,12 +592,16 @@ function renderFocus(){if(focusEl.hidden)return;const ts=day(keyOf(0)).tasks,ope
     <div class="fbtns"><button class="btn fgo">Yaptım</button><button class="btn sec fnx"${open.length<2?' disabled':''}>Sonrakine geç</button></div>
     <p class="fhint"><kbd>Enter</kbd> yaptım <kbd>→</kbd> sonraki <kbd>Esc</kbd> çık</p>`
     :`<h2 class="ftx">${ts.length?'Bugünün işleri bitti.':'Bugün için plan yok.'}</h2><div class="fbtns"><button class="btn fend">Kapat</button></div>`)+
-    `</div><div class="fprog"><div class="meter"><i style="width:${ts.length?n/ts.length*100:0}%"></i></div></div>`;
+    `</div><div class="fprog"><div class="meter"><i style="width:${focusPct}%"></i></div></div>`;
+  const pct=ts.length?n/ts.length*100:0,bar=focusEl.querySelector('.fprog i');void bar.offsetWidth;bar.style.width=pct+'%';focusPct=pct;
   if(t){focusEl.querySelector('.ftx').textContent=t.text;const m=focusEl.querySelector('.ftm');m.hidden=!t.time&&!t.important;
     if(t.important){const d=document.createElement('span');d.className='impd';m.append(d,' Önemli')}if(t.time)m.append((t.important?'  ·  ':'')+t.time)}
+  const sig=(t?t.id:'-')+'|'+n;if(sig!==focusSig&&motion()){const from=focusDir==='right'?'translateX(28px)':'translateY(14px)';
+    [...focusEl.querySelector('.fbox').children].forEach((el,i)=>el.animate([{opacity:0,transform:from},{opacity:1,transform:'none'}],{duration:380,delay:i*50,easing:EASE,fill:'backwards'}))}
+  focusSig=sig;focusDir='up';
   (focusEl.querySelector('.'+(had.split(' ').find(c=>/^f(go|nx|end)$/.test(c))||'x'))||focusEl.querySelector('.fgo,.fend')).focus()}
-function focusDone(){const ts=day(keyOf(0)).tasks,t=ts.find(x=>x.id===focusId);if(!t)return;const nx=nextOpen(t.id);t.done=true;focusId=nx;save(keyOf(0));render()}
-function focusSkip(){const nx=nextOpen(focusId);if(nx){focusId=nx;renderFocus()}}
+function focusDone(){const ts=day(keyOf(0)).tasks,t=ts.find(x=>x.id===focusId);if(!t)return;const nx=nextOpen(t.id);t.done=true;celebrate=true;focusId=nx;save(keyOf(0));render()}
+function focusSkip(){const nx=nextOpen(focusId);if(nx){focusId=nx;focusDir='right';renderFocus()}}
 function focusKey(e){const k=e.key,onBtn=e.target.closest&&e.target.closest('button');
   if(k==='Escape'||k==='f'){e.preventDefault();closeFocus()}
   else if((k==='Enter'||k===' ')&&!onBtn){e.preventDefault();focusDone()}
@@ -594,6 +676,9 @@ async function initPerms(){try{perm=await desk.permissions.state()}catch(e){perm
 /* ---------- çevrimdışı çalışma (PWA): yalnızca kendi sitesinde, Claude çerçevesi içinde değil ---------- */
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&window.self===window.top)
   addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+
+setTimeout(()=>document.body.classList.remove('intro'),1600);
+document.fonts?.ready.then(moveInd);addEventListener('resize',moveInd);
 
 let curToday=keyOf(0);setInterval(()=>{if(keyOf(0)!==curToday){curToday=keyOf(0);render()}},60000);
 render();

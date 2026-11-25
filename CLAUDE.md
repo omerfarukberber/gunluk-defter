@@ -19,6 +19,14 @@
 - Tasarım dili: Linear / Things gibi sakin ve düzenli. Düzeni boşluk ve hizalama kurar; iş satırlarında çizgi yok, gölge yalnızca panel, bildirim ve sürüklemede. Vurgu rengi logo ailesinden yumuşak, sakin bir ton ve yalnızca tik, ilerleme çubuğu ve "Sıradaki" işaretinde kullanılır: açık temada petrol mavisi `--acc` #235b74 (kutunun içindeki tik beyaz), koyu temada soluk adaçayı yeşili `--acc` #8cc9ad (tik koyu gri). Logodaki neon nane yeşilini (#80f7ae) uygulama içinde kullanma; Ömer yapay ve parlak bulmuyor, sade ve profesyonel tonlar istiyor. Koyu zeminli bildirimdeki düğme için `--accInv`. Önemli işareti kırmızı nokta (`--imp`), devreden işler pembe blok (`--pink`), arama eşleşmesi sarı (`--mark`).
 - Telefon: 360px'te yatay kaydırma olmamalı, tıklanabilir alanlar en az 40px. Dokunmatik ekranda iş satırının işlemleri satıra dokununca altında açılır (`.task.sel`).
 
+## Hareket (animasyon)
+- Kısa ve sakin (çoğu 200-380 ms), ortak eğri `--ease`, yaylanma `--spring`. "Hareketi azalt" (prefers-reduced-motion) açıksa hiçbiri çalışmaz: CSS'te genel kural, JS'te `motion()` kontrolü. Yeni animasyon eklerken ikisine de uy.
+- Açılış: `<body class="intro">` ile logo, başlık, sekmeler ve işler sırayla gelir; sınıf 1.6 sn sonra kaldırılır.
+- Liste (`renderList`): FLIP. Kalan işler yeni yerine kayar, yeni iş belirir; kaldırılan işin kopyası `#ghosts` katmanında kaybolur (`exitHint`: silme sola, yarına ertele sağa, bugüne al sola). Gün/sekme değişince liste animasyonu yapılmaz, içerik toptan yumuşakça gelir.
+- Tamamlama: kutu "pop", üstü çizgi soldan sağa çizilir (text-decoration değil, arka plan çizgisi). Günün son işi işaretlenince ilerleme çubuğunda parıltı ve "Bugünün işleri tamam" bildirimi; silme bunu tetiklemez (`celebrate`).
+- Sekmelerin seçili arka planı `.tabs .ind` göstergesidir ve kayar (`moveInd`).
+- Testlerde kullanıcının localhost:8765 verisine dokunma; `.claude/launch.json` içindeki `defter-test` (port 8766) ayrı bir tarayıcı hafızası kullanır.
+
 ## Tema
 - Başlıktaki düğme: Sistem → Açık → Koyu. Varsayılan Sistem. Seçim `localStorage` içinde `gunluk-defter-tema` (`light` / `dark`; Sistem'de anahtar silinir).
 - `<head>` içindeki küçük betik temayı sayfa çizilmeden `html[data-theme]` olarak uygular (titreme olmasın diye); bunu `<style>`'dan önce tut.
