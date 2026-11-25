@@ -45,6 +45,7 @@
 --pink:light-dark(#ffe3ea,#3a2830);
 --pinkInk:light-dark(#7a2440,#ffccd8);
 --imp:light-dark(#e5484d,#ff6b70);
+--mark:light-dark(#fff0b3,#4d4216);
 --red:light-dark(#d93a3f,#ff7a7f);
 --shade:light-dark(rgba(16,17,19,.10),rgba(0,0,0,.55))}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
@@ -141,7 +142,14 @@ textarea::placeholder{color:var(--faint)}
 textarea:focus{box-shadow:inset 0 0 0 1.5px var(--line);background:var(--bg)}
 
 /* geçmiş */
-.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:28px 0 8px}
+.hsearch{position:relative;margin:28px 0 0}
+.hsearch svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint);pointer-events:none}
+.hsearch input{width:100%;height:44px;border:0;border-radius:10px;background:var(--surf);padding:0 12px 0 40px;font-size:15px;outline:none;-webkit-appearance:none;appearance:none}
+.hsearch input::placeholder{color:var(--faint)}
+.hsearch input:focus{background:var(--bg);box-shadow:inset 0 0 0 1.5px var(--line)}
+.hcount{margin:20px 0 8px;font-size:13px;color:var(--muted)}
+mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:20px 0 8px}
 .kpi{background:var(--surf);border-radius:12px;padding:14px 16px}
 .kpi b{display:block;font-size:clamp(22px,6vw,28px);font-weight:700;letter-spacing:-.02em;line-height:1.15}
 .kpi span{font-size:13px;color:var(--muted);line-height:1.35;display:block;margin-top:2px}
@@ -242,6 +250,7 @@ footer button:hover{color:var(--ink)}
     <div class="notewrap"><label for="note">Günün notu</label><textarea id="note" maxlength="2000" placeholder="Kısa bir hatırlatma ya da günün değerlendirmesi…"></textarea></div>
   </section>
   <section id="histView" hidden>
+    <div class="hsearch"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><input id="hq" type="search" maxlength="100" placeholder="İşlerde ve notlarda ara" aria-label="Geçmişte ara"></div>
     <div class="kpis" id="kpis"></div>
     <div class="spark" id="spark" aria-label="Son 14 gün tamamlama oranı"></div>
     <div id="hlist"></div>
@@ -338,7 +347,7 @@ function render(){if(editing)return;
   updateBadge();renderFocus()}
 
 function renderHist(today){
-  const ks=Object.keys(days).filter(k=>k<=today&&days[k].tasks.length).sort().reverse();
+  let ks=Object.keys(days).filter(k=>k<=today&&days[k].tasks.length).sort().reverse();
   let tot=0,dn=0;for(let i=0;i<7;i++){const t=days[keyOf(-i)]?.tasks||[];tot+=t.length;dn+=t.filter(x=>x.done).length}
   let streak=0;for(let i=days[today]?.tasks.length?0:1;;i++){if(days[keyOf(-i)]?.tasks.length)streak++;else break}
   const kp=$('#kpis');kp.innerHTML='<div class="kpi"><b></b><span>Son 7 gün tamamlama</span></div><div class="kpi"><b></b><span>Son 7 günde biten iş</span></div><div class="kpi"><b></b><span>Planlı gün serisi</span></div>';
@@ -347,16 +356,24 @@ function renderHist(today){
     sp+=`<div title="${fmtDay(d)}: ${t.length?Math.round(r*100)+'%':'plan yok'}"><i class="${t.length&&r?'':'z'}" style="height:${t.length?Math.max(r*100,4):4}%"></i><small>${d.toLocaleDateString('tr-TR',{weekday:'narrow'})}</small></div>`}
   $('#spark').innerHTML=sp;
   const hl=$('#hlist');hl.textContent='';
+  const q=$('#hq').value.trim().toLocaleLowerCase('tr'),has=x=>!!x&&x.toLocaleLowerCase('tr').includes(q);
+  $('#kpis').hidden=$('#spark').hidden=!!q;
+  const hi=(el,txt)=>{if(!q){el.textContent=txt;return}const low=txt.toLocaleLowerCase('tr');let i=0,j;
+    while((j=low.indexOf(q,i))>=0){el.append(txt.slice(i,j));const m=document.createElement('mark');m.textContent=txt.slice(j,j+q.length);el.append(m);i=j+q.length}el.append(txt.slice(i))};
+  if(q){ks=Object.keys(days).filter(k=>days[k].tasks.some(x=>has(x.text))||has(days[k].note)).sort().reverse();
+    const c=ks.reduce((a,k)=>a+days[k].tasks.filter(x=>has(x.text)).length+(has(days[k].note)?1:0),0),p=document.createElement('p');p.className='hcount';
+    p.textContent=c?`${ks.length} günde ${c} sonuç`:'Sonuç bulunamadı.';hl.appendChild(p);if(!c)return}
   if(!ks.length){hl.innerHTML='<p class="hempty">Henüz geçmiş yok. Günlerin burada birikecek.</p>';return}
-  ks.forEach((k,i)=>{const t=days[k].tasks,n=t.filter(x=>x.done).length,d=parseKey(k),el=document.createElement('details');el.className='hday';if(i===0)el.open=true;
-    el.innerHTML=`<summary><span class="hd"></span><span class="hp">${n} / ${t.length}</span><span class="hb"><i style="width:${n/t.length*100}%"></i></span></summary><ul></ul>`;
-    const hd=el.querySelector('.hd');hd.textContent=k===today?'Bugün':fmtDay(d);const sm=document.createElement('small');sm.textContent=fmtW(d);hd.appendChild(sm);
+  ks.forEach((k,i)=>{const all=days[k].tasks,t=q?all.filter(x=>has(x.text)):all,n=all.filter(x=>x.done).length,d=parseKey(k),el=document.createElement('details');el.className='hday';if(i===0||q)el.open=true;
+    el.innerHTML=`<summary><span class="hd"></span><span class="hp">${n} / ${all.length}</span><span class="hb"><i style="width:${all.length?n/all.length*100:0}%"></i></span></summary><ul></ul>`;
+    const hd=el.querySelector('.hd');hd.textContent=k===today?'Bugün':k===keyOf(1)?'Yarın':fmtDay(d);const sm=document.createElement('small');sm.textContent=fmtW(d);hd.appendChild(sm);
     const ul=el.querySelector('ul');for(const x of t){const li=document.createElement('li');li.className=x.done?'d':x.moved?'m':'';
       if(x.important){const s=document.createElement('span');s.className='impd';s.title='Önemli';li.appendChild(s)}
       if(x.time){const s=document.createElement('span');s.className='tm';s.textContent=x.time;li.appendChild(s)}
-      const s=document.createElement('span');s.className='tx';s.textContent=x.text;li.appendChild(s);
+      const s=document.createElement('span');s.className='tx';hi(s,x.text);li.appendChild(s);
       if(x.moved){const p=document.createElement('span');p.className='pill';p.textContent='taşındı';li.appendChild(p)}ul.appendChild(li)}
-    if(days[k].note){const p=document.createElement('p');p.className='hnote';p.textContent=days[k].note;el.appendChild(p)}hl.appendChild(el)})}
+    if(!t.length)el.querySelector('ul').remove();
+    if(days[k].note&&(!q||has(days[k].note))){const p=document.createElement('p');p.className='hnote';hi(p,days[k].note);el.appendChild(p)}hl.appendChild(el)})}
 
 /* ---------- işlemler ---------- */
 let undoFn=null,toastT=null;
@@ -442,6 +459,8 @@ $('#carry').addEventListener('click',e=>{const today=keyOf(0),go=e.target.closes
   else if(e.target.closest('.skip')){day(today).carried=true;save(today);render()}});
 $('#note').addEventListener('input',e=>{const k=viewKey();day(k).note=e.target.value;save(k)});
 $('#copyBtn').onclick=copyPlan;
+$('#hq').addEventListener('input',()=>render());
+$('#hq').addEventListener('keydown',e=>{if(e.key==='Escape'&&e.target.value){e.stopPropagation();e.target.value='';render()}});
 const panel=$('#panel');
 const openPanel=on=>{panel.hidden=!on;$('#setBtn').setAttribute('aria-expanded',on);if(on){renderPanel();panel.querySelector('button')?.focus()}};
 $('#setBtn').onclick=()=>openPanel(panel.hidden);$('#keysBtn').onclick=()=>{openPanel(true);panel.querySelector('#keysH')?.scrollIntoView()};
