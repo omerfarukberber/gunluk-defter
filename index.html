@@ -187,6 +187,19 @@ footer button:hover{color:var(--ink)}
 .keys{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:14px;align-items:center}
 .keys span{color:var(--muted)}.keys kbd{justify-self:start}
 
+.focus{position:fixed;inset:0;z-index:25;background:var(--bg);display:grid;place-items:center;padding:72px 20px}
+.focus .fx{position:absolute;top:12px;right:12px}
+.fbox{width:100%;max-width:560px;text-align:center}
+.fmeta{display:flex;gap:12px;justify-content:center;align-items:baseline;margin:0 0 20px;font-size:13px;color:var(--muted)}
+.ftx{font-size:clamp(26px,7vw,40px);font-weight:650;letter-spacing:-.025em;line-height:1.2;margin:0;overflow-wrap:anywhere}
+.ftm{display:flex;gap:6px;justify-content:center;align-items:center;margin:14px 0 0;color:var(--muted);font-size:15px;white-space:pre}
+.fbtns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:40px}
+.fbtns .btn{min-height:48px;padding:0 24px;font-size:15px}
+.btn:disabled{opacity:.4;cursor:default}
+.fhint{display:flex;gap:6px 8px;justify-content:center;align-items:center;flex-wrap:wrap;margin:28px 0 0;font-size:13px;color:var(--faint)}
+.fhint kbd:not(:first-child){margin-left:10px}
+@media(hover:none){.fhint{display:none}}
+.fprog{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);width:min(320px,calc(100vw - 48px))}
 .toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,16px);opacity:0;pointer-events:none;background:var(--ink);color:var(--bg);border-radius:12px;padding:4px 4px 4px 16px;display:flex;gap:8px;align-items:center;min-height:48px;max-width:calc(100vw - 32px);box-shadow:0 10px 30px var(--shade);transition:.2s;font-weight:500;font-size:14px;z-index:30}
 .toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .toast button{color:var(--acc);font-weight:600;min-height:40px;padding:0 12px;border-radius:9px}
@@ -201,6 +214,7 @@ footer button:hover{color:var(--ink)}
     <div class="bar">
       <div class="brand"><svg viewBox="0 0 256 256" aria-hidden="true"><rect width="256" height="256" rx="58" fill="#00a86b"/><path d="M72 134l40 40 76-82" fill="none" stroke="#fff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/></svg>Günlük Defter</div>
       <div class="tools">
+        <button class="ib" id="focusBtn" title="Odak modu (F)" aria-label="Odak modu"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></button>
         <button class="ib" id="copyBtn" title="Planı panoya kopyala" aria-label="Planı kopyala"><svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></button>
         <button class="ib" id="themeBtn" title="Tema" aria-label="Tema"></button>
         <button class="ib" id="setBtn" title="Ayarlar" aria-label="Ayarlar" aria-expanded="false"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
@@ -235,6 +249,7 @@ footer button:hover{color:var(--ink)}
   <footer><span id="status">Yükleniyor…</span><button id="keysBtn">Klavye kısayolları</button></footer>
 </div>
 <aside class="panel" id="panel" hidden aria-label="Ayarlar"></aside>
+<div class="focus" id="focus" hidden role="dialog" aria-modal="true" aria-label="Odak modu"></div>
 <div class="toast" id="toast" role="status"><span id="toastt"></span><button id="undo">Geri al</button></div>
 <script>
 {
@@ -306,7 +321,7 @@ function renderList(k){const ts=day(k).tasks,first=view==='bugun'?ts.find(t=>!t.
 function render(){if(editing)return;
   const today=keyOf(0),hist=view==='gecmis';
   document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===view));
-  $('#dayView').hidden=hist;$('#histView').hidden=!hist;$('#prog').hidden=hist;$('#copyBtn').hidden=hist;
+  $('#dayView').hidden=hist;$('#histView').hidden=!hist;$('#prog').hidden=hist;$('#copyBtn').hidden=hist;$('#focusBtn').hidden=hist;
   if(hist){$('#date').textContent='Geçmiş';$('#wday').textContent='Son günlerin özeti';$('#carry').hidden=true;renderHist(today);updateBadge();return}
   const k=viewKey();applyRoutines(k);
   const d=view==='yarin'?dateOf(1):dateOf(0),D=day(k),ts=D.tasks,done=ts.filter(t=>t.done).length;
@@ -320,7 +335,7 @@ function render(){if(editing)return;
   if(c){box.innerHTML='<p><b></b> <span></span></p><button class="go">Bugüne taşı</button><button class="skip">Gerek yok</button>';
     box.querySelector('b').textContent=(c.k===keyOf(-1)?'Dünden':fmtDay(parseKey(c.k))+' gününden')+' '+c.left.length+' iş kaldı.';
     box.querySelector('span').textContent=c.left.slice(0,3).map(t=>t.text).join(', ')+(c.left.length>3?'…':'');box.querySelector('.go').dataset.k=c.k}
-  updateBadge()}
+  updateBadge();renderFocus()}
 
 function renderHist(today){
   const ks=Object.keys(days).filter(k=>k<=today&&days[k].tasks.length).sort().reverse();
@@ -432,10 +447,41 @@ const openPanel=on=>{panel.hidden=!on;$('#setBtn').setAttribute('aria-expanded',
 $('#setBtn').onclick=()=>openPanel(panel.hidden);$('#keysBtn').onclick=()=>{openPanel(true);panel.querySelector('#keysH')?.scrollIntoView()};
 document.addEventListener('pointerdown',e=>{if(!panel.hidden&&!panel.contains(e.target)&&!e.target.closest('#setBtn,#keysBtn'))openPanel(false)});
 document.addEventListener('keydown',e=>{const t=document.activeElement?.tagName,typing=t==='INPUT'||t==='TEXTAREA';
+  if(!focusEl.hidden){focusKey(e);return}
   if(e.key==='Escape'&&!panel.hidden){openPanel(false);return}if(typing||e.ctrlKey||e.metaKey||e.altKey)return;
   if(e.key==='/'||e.key==='n'){if(view==='gecmis')setView('bugun');e.preventDefault();$('#inp').focus()}
   else if(e.key==='1'||e.key==='2'||e.key==='3'){setView(['bugun','yarin','gecmis'][+e.key-1])}
-  else if(e.key==='?'){openPanel(true)}});
+  else if(e.key==='?'){openPanel(true)}
+  else if(e.key==='f'){e.preventDefault();openFocus()}});
+
+/* ---------- odak modu: yalnızca sıradaki iş, büyük ve sakin ---------- */
+const focusEl=$('#focus');let focusId=null;
+function nextOpen(fromId){const ts=day(keyOf(0)).tasks,i=ts.findIndex(t=>t.id===fromId);
+  for(let j=1;j<=ts.length;j++){const x=ts[(i+j+ts.length)%ts.length];if(x&&!x.done&&x.id!==fromId)return x.id}return null}
+function openFocus(){if(editing)return;openPanel(false);if(view!=='bugun'){view='bugun';render()}
+  focusId=(day(keyOf(0)).tasks.find(t=>!t.done)||{}).id||null;focusEl.hidden=false;document.body.style.overflow='hidden';renderFocus()}
+function closeFocus(){focusEl.hidden=true;focusId=null;document.body.style.overflow='';render();$('#focusBtn').focus()}
+function renderFocus(){if(focusEl.hidden)return;const ts=day(keyOf(0)).tasks,open=ts.filter(t=>!t.done),n=ts.length-open.length;
+  let t=ts.find(x=>x.id===focusId&&!x.done);if(!t){t=open[0];focusId=t?t.id:null}
+  const had=focusEl.contains(document.activeElement)?document.activeElement.className:'';
+  focusEl.innerHTML=`<button class="ib fx" title="Çık (Esc)" aria-label="Odak modundan çık">${IC.del}</button><div class="fbox">`+(t?
+    `<p class="fmeta"><span class="tag">${t===open[0]?'Sıradaki':'Sonraki'}</span><span class="num">${n}/${ts.length} tamamlandı</span></p><h2 class="ftx"></h2><p class="ftm"></p>
+    <div class="fbtns"><button class="btn fgo">Yaptım</button><button class="btn sec fnx"${open.length<2?' disabled':''}>Sonrakine geç</button></div>
+    <p class="fhint"><kbd>Enter</kbd> yaptım <kbd>→</kbd> sonraki <kbd>Esc</kbd> çık</p>`
+    :`<h2 class="ftx">${ts.length?'Bugünün işleri bitti.':'Bugün için plan yok.'}</h2><div class="fbtns"><button class="btn fend">Kapat</button></div>`)+
+    `</div><div class="fprog"><div class="meter"><i style="width:${ts.length?n/ts.length*100:0}%"></i></div></div>`;
+  if(t){focusEl.querySelector('.ftx').textContent=t.text;const m=focusEl.querySelector('.ftm');m.hidden=!t.time&&!t.important;
+    if(t.important){const d=document.createElement('span');d.className='impd';m.append(d,' Önemli')}if(t.time)m.append((t.important?'  ·  ':'')+t.time)}
+  (focusEl.querySelector('.'+(had.split(' ').find(c=>/^f(go|nx|end)$/.test(c))||'x'))||focusEl.querySelector('.fgo,.fend')).focus()}
+function focusDone(){const ts=day(keyOf(0)).tasks,t=ts.find(x=>x.id===focusId);if(!t)return;const nx=nextOpen(t.id);t.done=true;focusId=nx;save(keyOf(0));render()}
+function focusSkip(){const nx=nextOpen(focusId);if(nx){focusId=nx;renderFocus()}}
+function focusKey(e){const k=e.key,onBtn=e.target.closest&&e.target.closest('button');
+  if(k==='Escape'||k==='f'){e.preventDefault();closeFocus()}
+  else if((k==='Enter'||k===' ')&&!onBtn){e.preventDefault();focusDone()}
+  else if(k==='ArrowRight'||k==='n'){e.preventDefault();focusSkip()}
+  else if(k==='Tab'){const b=[...focusEl.querySelectorAll('button:not([disabled])')];const i=b.indexOf(document.activeElement);e.preventDefault();b[(i+(e.shiftKey?-1:1)+b.length)%b.length]?.focus()}}
+focusEl.addEventListener('click',e=>{if(e.target.closest('.fx,.fend'))closeFocus();else if(e.target.closest('.fgo'))focusDone();else if(e.target.closest('.fnx'))focusSkip()});
+$('#focusBtn').onclick=openFocus;
 
 /* ---------- ayarlar paneli ---------- */
 function renderPanel(){if(panel.hidden)return;
@@ -451,7 +497,7 @@ function renderPanel(){if(panel.hidden)return;
 <div class="radd"><button class="btn" id="exp">Dışa aktar</button><button class="btn sec" id="imp">İçe aktar</button><input type="file" id="impF" accept=".json,application/json" hidden></div>
 <h3>Masaüstü</h3>${dk}
 <h3 id="keysH">Klavye kısayolları</h3><div class="keys">
-<kbd>/</kbd><span>Yeni iş yaz</span><kbd>1 2 3</kbd><span>Bugün, Yarın, Geçmiş</span><kbd>↑ ↓</kbd><span>İşler arasında gez</span>
+<kbd>/</kbd><span>Yeni iş yaz</span><kbd>F</kbd><span>Odak modu</span><kbd>1 2 3</kbd><span>Bugün, Yarın, Geçmiş</span><kbd>↑ ↓</kbd><span>İşler arasında gez</span>
 <kbd>Boşluk</kbd><span>Yapıldı / yapılmadı</span><kbd>Enter</kbd><span>Düzenle</span><kbd>Alt ↑ ↓</kbd><span>Sırayı değiştir</span>
 <kbd>T</kbd><span>Yarına ertele / bugüne al</span><kbd>I</kbd><span>Önemli işaretle</span><kbd>R</kbd><span>Rutin yap</span><kbd>Delete</kbd><span>Sil</span><kbd>Ctrl Shift D</kbd><span>Uygulamayı aç (kurulu sürüm)</span></div>`;
   const rl=panel.querySelector('#rl');if(!settings.routines.length)rl.innerHTML='<li><span style="color:var(--faint)">Henüz rutin yok</span></li>';
