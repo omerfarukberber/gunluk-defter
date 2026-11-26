@@ -51,6 +51,8 @@ Bilgisayara ya da telefona kurmak için:
 - **Chrome / Edge (Windows, Android):** adres çubuğundaki "Uygulamayı yükle" simgesine ya da menüdeki **Uygulamayı yükle** seçeneğine tıkla.
 - **Safari (iPhone, iPad):** Paylaş > **Ana Ekrana Ekle**.
 
+Uygulama da kurulabileceğini kendisi söyler: Chrome, Edge ve Android'de altta beliren **Yükle** kartıyla tek tıkla, iPhone'da gösterdiği adımlarla kurulur. Kartı kapatırsan **Ayarlar > Uygulama** bölümünden yine kurabilirsin.
+
 Kurduktan sonra kendi penceresinde açılır ve internet olmadan da çalışır.
 
 ## Veriler nerede saklanır

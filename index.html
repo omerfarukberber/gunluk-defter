@@ -217,6 +217,12 @@ footer button:hover{color:var(--ink)}
 @media(hover:none){.fhint{display:none}}
 .fprog{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);width:min(320px,calc(100vw - 48px))}
 .toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,16px);opacity:0;pointer-events:none;background:var(--ink);color:var(--bg);border-radius:12px;padding:4px 4px 4px 16px;display:flex;gap:8px;align-items:center;min-height:48px;max-width:calc(100vw - 32px);box-shadow:0 10px 30px var(--shade);transition:.2s;font-weight:500;font-size:14px;z-index:30}
+/* uygulamayı yükle kartı */
+.inst{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(460px,calc(100vw - 24px));display:flex;align-items:center;gap:12px;padding:10px 6px 10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px var(--shade);z-index:20;animation:instIn .45s var(--spring)}
+.inst .lg{width:36px;height:36px;flex:none;display:grid}.inst .lg svg{width:36px;height:36px}
+.itx{flex:1;display:flex;flex-direction:column;font-size:14px;line-height:1.35}.itx b{font-weight:600}.itx span{color:var(--muted);font-size:13px}
+@keyframes instIn{from{opacity:0;transform:translate(-50%,18px)}}
+body.has-inst .toast{bottom:100px}
 .toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .toast button{color:var(--accInv);font-weight:600;min-height:40px;padding:0 12px;border-radius:9px}
 
@@ -317,6 +323,7 @@ footer button:hover{color:var(--ink)}
   <footer><span id="status">Yükleniyor…</span><button id="keysBtn">Klavye kısayolları</button></footer>
 </div>
 <aside class="panel" id="panel" hidden aria-label="Ayarlar"></aside>
+<div class="inst" id="inst" hidden role="region" aria-label="Uygulamayı yükle"><span class="lg" aria-hidden="true"></span><div class="itx"><b>Uygulama olarak yükle</b><span id="instSub">İnternet olmadan da çalışır.</span></div><button class="btn" id="instGo">Yükle</button><button class="ib" id="instX" title="Kapat" aria-label="Kapat"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
 <div class="focus" id="focus" hidden role="dialog" aria-modal="true" aria-label="Odak modu"></div>
 <div class="toast" id="toast" role="status"><span id="toastt"></span><button id="undo">Geri al</button></div>
 <script>
@@ -612,8 +619,12 @@ $('#focusBtn').onclick=openFocus;
 
 /* ---------- ayarlar paneli ---------- */
 function renderPanel(){if(panel.hidden)return;
-  let dk='';
-  if(desk&&desk.permissions){const on=keyOn&&trayOn;dk=`<p>Ctrl+Shift+D ile uygulamayı her yerden aç, kalan iş sayısını tepside gör.</p>${on?'<span class="ok">Kısayol ve tepsi simgesi açık</span>':`<button class="btn" id="enDesk">Kısayol ve tepsiyi etkinleştir</button>`}${perm&&(perm.shortcuts==='denied'||perm['menu-bar']==='denied')?' <button class="btn sec" id="mgDesk">İzinleri yönet</button>':''}`}
+  let dk='',dkH='Masaüstü';
+  if(webApp){dkH='Uygulama';dk=standalone()?'<p>Uygulama olarak yüklü; kendi penceresinde açılıyor.</p>'
+    :instEvt?'<p>Kendi penceresinde açılır, masaüstünde ve başlat menüsünde simgesi olur, internet olmadan da çalışır.</p><button class="btn" id="instBtn">Uygulamayı yükle</button>'
+    :isIOS?'<p>Safari\'de alttaki <b>Paylaş</b> düğmesine dokun, sonra <b>Ana Ekrana Ekle</b>.</p>'
+    :'<p>Chrome ya da Edge\'de adres çubuğundaki yükle simgesiyle uygulama olarak kurabilirsin. Simge yoksa uygulama zaten yüklü olabilir.</p>'}
+  else if(desk&&desk.permissions){const on=keyOn&&trayOn;dk=`<p>Ctrl+Shift+D ile uygulamayı her yerden aç, kalan iş sayısını tepside gör.</p>${on?'<span class="ok">Kısayol ve tepsi simgesi açık</span>':`<button class="btn" id="enDesk">Kısayol ve tepsiyi etkinleştir</button>`}${perm&&(perm.shortcuts==='denied'||perm['menu-bar']==='denied')?' <button class="btn sec" id="mgDesk">İzinleri yönet</button>':''}`}
   else if(instState==='available')dk='<p>Uygulamayı kendi penceresinde açmak ve kısayol kullanmak için kur.</p><button class="btn" id="inDesk">Masaüstüne kur</button>';
   else if(instState==='installed')dk='<p>Bu bilgisayarda kurulu. Masaüstü özellikleri kurulu uygulamanın içinde açılır.</p>';
   else dk='<p>Masaüstü özellikleri Claude masaüstü uygulamasından kurulan sürümde çalışır.</p>';
@@ -623,7 +634,7 @@ function renderPanel(){if(panel.hidden)return;
 <h3>Yedek</h3><p>Tüm günleri ve rutinleri bir JSON dosyası olarak indir; başka bir cihazda ya da tarayıcıda aynı dosyadan geri yükle.</p>
 <div class="radd"><button class="btn" id="exp">Yedekle</button><button class="btn sec" id="imp">Geri yükle</button><input type="file" id="impF" accept=".json,application/json" hidden></div>
 ${pendingImport?`<div class="confirm" role="alertdialog" aria-labelledby="cfT"><p id="cfT">${importMsg(pendingImport)}</p><div class="radd"><button class="btn" id="impOk">Üzerine yaz</button><button class="btn sec" id="impNo">Vazgeç</button></div></div>`:''}
-<h3>Masaüstü</h3>${dk}
+<h3>${dkH}</h3>${dk}
 <h3 id="keysH">Klavye kısayolları</h3><div class="keys">
 <kbd>/</kbd><span>Yeni iş yaz</span><kbd>F</kbd><span>Odak modu</span><kbd>1 2 3</kbd><span>Bugün, Yarın, Geçmiş</span><kbd>↑ ↓</kbd><span>İşler arasında gez</span>
 <kbd>Boşluk</kbd><span>Yapıldı / yapılmadı</span><kbd>Enter</kbd><span>Düzenle</span><kbd>Alt ↑ ↓</kbd><span>Sırayı değiştir</span>
@@ -638,8 +649,26 @@ ${pendingImport?`<div class="confirm" role="alertdialog" aria-labelledby="cfT"><
   panel.querySelector('#rAdd').onsubmit=e=>{e.preventDefault();const p=parse(panel.querySelector('#rInp').value);if(!p.text)return;const r={id:rid(),text:p.text,time:p.time};settings.routines.push(r);
     for(const k of [keyOf(0),keyOf(1)]){const d=days[k];if(d&&d.ra){d.tasks.unshift({id:rid(),text:r.text,time:r.time,done:false,moved:false,routine:r.id});save(k)}}save('settings');render();renderPanel();panel.querySelector('#rInp').focus()};
   const en=panel.querySelector('#enDesk');if(en)en.onclick=()=>desk.permissions.request(['shortcuts','menu-bar']).then(st=>{perm=st;if(st.shortcuts==='granted')regKey();if(st['menu-bar']==='granted'){trayOn=true;updateBadge(true)}renderPanel()}).catch(()=>toast('İzin istenemedi'));
+  const ib=panel.querySelector('#instBtn');if(ib)ib.onclick=install;
   const mg=panel.querySelector('#mgDesk');if(mg)mg.onclick=()=>desk.permissions.manage().then(initPerms).catch(()=>{});
   const ins=panel.querySelector('#inDesk');if(ins)ins.onclick=()=>desk.install.request().then(r=>{if(r==='installed'){instState='installed';renderPanel()}}).catch(()=>{})}
+
+/* ---------- uygulamayı yükle (PWA): yalnızca kendi sitesinde, Claude çerçevesi dışında ---------- */
+const LSI='gunluk-defter-yukle-kapat',webApp=window.self===window.top&&/^https?:$/.test(location.protocol);
+const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+let instEvt=null,instReady=false;
+const instOff=()=>{try{return localStorage.getItem(LSI)==='1'}catch(e){return false}};
+function renderInstall(){const el=$('#inst'),show=instReady&&webApp&&!standalone()&&!instOff()&&!!(instEvt||isIOS);
+  if(show&&el.hidden){el.querySelector('.lg').innerHTML=document.querySelector('.brand svg').outerHTML}
+  el.hidden=!show;document.body.classList.toggle('has-inst',show)}
+function install(){if(instEvt){const e=instEvt;instEvt=null;Promise.resolve(e.prompt()).catch(()=>{});e.userChoice.catch(()=>{}).finally(()=>{renderInstall();renderPanel()})}
+  else if(isIOS){$('#instSub').innerHTML='Alttaki <b>Paylaş</b> düğmesine dokun, sonra <b>Ana Ekrana Ekle</b>.';$('#instGo').hidden=true;openPanel(false)}}
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();instEvt=e;renderInstall();renderPanel()});
+addEventListener('appinstalled',()=>{instEvt=null;renderInstall();renderPanel();toast('Uygulama yüklendi')});
+$('#instGo').onclick=install;
+$('#instX').onclick=()=>{try{localStorage.setItem(LSI,'1')}catch(e){}renderInstall();toast('Daha sonra Ayarlar > Uygulama bölümünden yükleyebilirsin')};
+setTimeout(()=>{instReady=true;renderInstall()},2500);
 
 /* ---------- masaüstü ---------- */
 const use=n=>(window.claude&&window.claude.use)?Promise.resolve(window.claude.use(n)).catch(()=>null):Promise.resolve(null);

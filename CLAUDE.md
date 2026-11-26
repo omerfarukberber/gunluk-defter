@@ -27,6 +27,12 @@
 - Sekmelerin seçili arka planı `.tabs .ind` göstergesidir ve kayar (`moveInd`).
 - Testlerde kullanıcının localhost:8765 verisine dokunma; `.claude/launch.json` içindeki `defter-test` (port 8766) ayrı bir tarayıcı hafızası kullanır.
 
+## Uygulamayı yükle (PWA kurulumu)
+- Yalnızca kendi sitesinde (Claude çerçevesi dışında, `webApp`) ve uygulama kurulu değilken (`standalone()`).
+- Chrome/Edge/Android: `beforeinstallprompt` olayı saklanır; altta 2,5 sn sonra beliren kart ("Uygulama olarak yükle") ve Ayarlar > Uygulama'daki düğme tarayıcının kurulum penceresini açar. Olay bir kez kullanılabilir, her denemeden sonra bırakılır.
+- iPhone/iPad (Safari): kurulum olayı yok; kart ve panel "Paylaş > Ana Ekrana Ekle" adımını gösterir.
+- Kartın "×" düğmesi `gunluk-defter-yukle-kapat` anahtarıyla kartı kalıcı kapatır; panel bölümü her zaman durur.
+
 ## Tema
 - Başlıktaki düğme: Sistem → Açık → Koyu. Varsayılan Sistem. Seçim `localStorage` içinde `gunluk-defter-tema` (`light` / `dark`; Sistem'de anahtar silinir).
 - `<head>` içindeki küçük betik temayı sayfa çizilmeden `html[data-theme]` olarak uygular (titreme olmasın diye); bunu `<style>`'dan önce tut.
