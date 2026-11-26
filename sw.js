@@ -1,19 +1,19 @@
 /* Günlük Defter service worker: uygulamayı çevrimdışı açılabilir yapar.
    Bir dosyayı değiştirip yayınladığında SURUM'u artır; eski önbellek silinir. */
-const SURUM = 'v3';
+const SURUM = 'v4';
 const KABUK = 'defter-kabuk-' + SURUM;
 const DOSYALAR = [
   './',
   './index.html',
-  './manifest.webmanifest',
-  './logo.svg',
+  './manifest.webmanifest?v=3',
+  './logo.svg?v=3',
   './fonts/inter-latin.woff2',
   './fonts/inter-latin-ext.woff2',
-  './icons/favicon-32.png',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon-maskable-512.png',
-  './icons/apple-touch-icon.png'
+  './icons/gd-favicon-32.png',
+  './icons/gd-192.png',
+  './icons/gd-512.png',
+  './icons/gd-maskable-512.png',
+  './icons/gd-apple-180.png'
 ];
 
 self.addEventListener('install', e => {
